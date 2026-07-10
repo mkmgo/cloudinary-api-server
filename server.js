@@ -116,4 +116,6 @@ app.get('/list-table/:account', async (req, res) => {
     }
 });
 
-app.listen(port, () => console.log(`Server: http://localhost:${port}`));
+app.get('/', (req, res) => {
+    res.send('<h1>Server is running!</h1><p>Go to <a href="/list-table/C1">List Table C1</a></p>');
+});
