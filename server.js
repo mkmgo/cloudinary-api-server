@@ -117,3 +117,13 @@ app.get('/list-table/:account', async (req, res) => {
 });
 
 app.listen(port, () => console.log(`Server: http://localhost:${port}`));
+app.get('/', (req, res) => {
+    res.send(`
+        <h1>Cloudinary Control Panel</h1>
+        <ul>
+            <li><a href="/list-table/C1">Account 1 Library</a></li>
+            <li><a href="/list-table/C2">Account 2 Library</a></li>
+            <li><a href="/list-table/C3">Account 3 Library</a></li>
+        </ul>
+    `);
+});
