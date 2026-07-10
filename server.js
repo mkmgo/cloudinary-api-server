@@ -6,7 +6,7 @@ const multer = require('multer');
 const app = express();
 const port = 3000;
 
-// Corrected Dynamic Cloudinary Factory
+// Dynamic Cloudinary Factory
 const getCloudinary = (account) => {
     const configs = {
         C1: { cloud_name: process.env.C1_NAME, api_key: process.env.C1_KEY, api_secret: process.env.C1_SECRET },
@@ -14,11 +14,12 @@ const getCloudinary = (account) => {
         C3: { cloud_name: process.env.C3_NAME, api_key: process.env.C3_KEY, api_secret: process.env.C3_SECRET }
     };
     
-    // Use the v2 object directly to set the config
+    // Configure the singleton object dynamically
     const cld = require('cloudinary').v2;
     cld.config(configs[account] || configs.C1);
     return cld;
 };
+
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 app.use(express.json());
@@ -71,6 +72,16 @@ app.get('/list-table/:account', async (req, res) => {
 
         let tableHtml = `
             <html>
+            <style>
+                body { font-family: 'Segoe UI', sans-serif; margin: 20px; background-color: #f4f7f6; }
+                .controls { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+                table { width: 100%; border-collapse: collapse; background: white; table-layout: fixed; }
+                th, td { border: 1px solid #eee; padding: 12px; text-align: left; vertical-align: top; }
+                th:nth-child(1) { width: 130px; }
+                th:nth-child(2) { width: 250px; }
+                .url-cell { overflow-wrap: break-word; font-family: monospace; font-size: 11px; }
+                img { border-radius: 4px; border: 1px solid #ddd; display: block; }
+            </style>
             <body>
                 <h2>Media Library: ${req.params.account}</h2>
                 <div class="controls">
@@ -88,11 +99,14 @@ app.get('/list-table/:account', async (req, res) => {
                     </form>
                 </div>
                 <table>
-                    ${filtered.map(asset => {
-                        const isVideo = asset.resource_type === 'video';
-                        const thumbUrl = isVideo ? asset.secure_url.replace(/\.[^/.]+$/, ".jpg").replace('/upload/', '/upload/w_100,h_100,c_thumb,so_auto/') : asset.secure_url.replace('/upload/', '/upload/w_100,h_100,c_thumb/');
-                        return `<tr><td><img src="${thumbUrl}"></td><td>${asset.public_id}</td><td>${asset.secure_url}</td></tr>`;
-                    }).join('')}
+                    <thead><tr><th>Preview</th><th>ID</th><th>URL</th></tr></thead>
+                    <tbody>
+                        ${filtered.map(asset => {
+                            const isVideo = asset.resource_type === 'video';
+                            const thumbUrl = isVideo ? asset.secure_url.replace(/\.[^/.]+$/, ".jpg").replace('/upload/', '/upload/w_100,h_100,c_thumb,so_auto/') : asset.secure_url.replace('/upload/', '/upload/w_100,h_100,c_thumb/');
+                            return `<tr><td><img src="${thumbUrl}"></td><td>${asset.public_id}</td><td class="url-cell">${asset.secure_url}</td></tr>`;
+                        }).join('')}
+                    </tbody>
                 </table>
             </body>
             </html>`;
