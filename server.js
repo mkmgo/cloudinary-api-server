@@ -6,16 +6,19 @@ const multer = require('multer');
 const app = express();
 const port = 3000;
 
-// Dynamic Cloudinary Factory
+// Corrected Dynamic Cloudinary Factory
 const getCloudinary = (account) => {
     const configs = {
         C1: { cloud_name: process.env.C1_NAME, api_key: process.env.C1_KEY, api_secret: process.env.C1_SECRET },
         C2: { cloud_name: process.env.C2_NAME, api_key: process.env.C2_KEY, api_secret: process.env.C2_SECRET },
         C3: { cloud_name: process.env.C3_NAME, api_key: process.env.C3_KEY, api_secret: process.env.C3_SECRET }
     };
-    return new cloudinary.Cloudinary(configs[account] || configs.C1);
+    
+    // Use the v2 object directly to set the config
+    const cld = require('cloudinary').v2;
+    cld.config(configs[account] || configs.C1);
+    return cld;
 };
-
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 app.use(express.json());
