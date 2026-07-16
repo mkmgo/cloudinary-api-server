@@ -90,9 +90,9 @@ const COPY_ICON = '<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-
 // --- DASHBOARD ---
 app.get('/', (req, res) => {
     const accounts = [
-        { id: 'C1', name: 'dog0815braking@gmail.com', label: 'Core', color: '#6366f1' },
-        { id: 'C2', name: 'scalable.focus@gmail.com', label: 'Flow', color: '#8b5cf6' },
-        { id: 'C3', name: 'mkmueller.mission@gmail.com', label: 'Venture', color: '#a78bfa' }
+        { id: 'C1', name: 'Core (dog0815braking@gmail.com)', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>', color: '#6366f1' },
+        { id: 'C2', name: 'Flow (scalable.focus@gmail.com)', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>', color: '#8b5cf6' },
+        { id: 'C3', name: 'Venture (mkmueller.mission@gmail.com)', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 15c6.667-6 13.333 0 20-6"/><path d="M9 22c0-5 2-8 2-8s2 3 2 8"/><path d="M12 11c0-3 2-5 2-5s2 2 2 5"/></svg>', color: '#a78bfa' }
     ];
     res.send(`<!DOCTYPE html>
 <html lang="en">
@@ -119,8 +119,9 @@ app.get('/', (req, res) => {
         .card-icon {
             width: 44px; height: 44px; border-radius: 10px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 1.1rem; font-weight: 700; color: white; flex-shrink: 0;
+            color: white; flex-shrink: 0;
         }
+        .card-icon svg { width: 22px; height: 22px; }
         .card-body { flex: 1; }
         .card-title { font-weight: 600; font-size: 0.95rem; margin-bottom: 0.15rem; }
         .card-sub { color: var(--text-sec); font-size: 0.8rem; }
@@ -130,14 +131,14 @@ app.get('/', (req, res) => {
 <body>
     <div class="container">
         <div class="header">
-            <h1>Coudinary API-Server Dashboard</h1>
+            <h1>Cloudinary API-Server Dashboard</h1>
             <p>Select an account to manage media</p>
         </div>
         <div class="cards">
             ${accounts.map((acc) => {
                 const url = '/list-table/' + acc.id;
                 return `<a class="card" href="${url}">
-                    <div class="card-icon" style="background:${acc.color}">${acc.label}</div>
+                    <div class="card-icon" style="background:${acc.color}">${acc.icon}</div>
                     <div class="card-body">
                         <div class="card-title">${acc.name}</div>
                         <div class="card-sub">Open media library</div>
