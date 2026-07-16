@@ -90,9 +90,9 @@ const COPY_ICON = '<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-
 // --- DASHBOARD ---
 app.get('/', (req, res) => {
     const accounts = [
-        { id: 'C1', name: 'Account 1', color: '#6366f1' },
-        { id: 'C2', name: 'Account 2', color: '#8b5cf6' },
-        { id: 'C3', name: 'Account 3', color: '#a78bfa' }
+        { id: 'C1', name: 'dog0815braking@gmail.com', label: 'Core', color: '#6366f1' },
+        { id: 'C2', name: 'scalable.focus@gmail.com', label: 'Flow', color: '#8b5cf6' },
+        { id: 'C3', name: 'mkmueller.mission@gmail.com', label: 'Venture', color: '#a78bfa' }
     ];
     res.send(`<!DOCTYPE html>
 <html lang="en">
@@ -130,21 +130,18 @@ app.get('/', (req, res) => {
 <body>
     <div class="container">
         <div class="header">
-            <h1>Cloudinary Control Panel</h1>
+            <h1>Coudinary API-Server Dashboard</h1>
             <p>Select an account to manage media</p>
         </div>
         <div class="cards">
             ${accounts.map((acc) => {
                 const url = '/list-table/' + acc.id;
                 return `<a class="card" href="${url}">
-                    <div class="card-icon" style="background:${acc.color}">${acc.id}</div>
+                    <div class="card-icon" style="background:${acc.color}">${acc.label}</div>
                     <div class="card-body">
                         <div class="card-title">${acc.name}</div>
                         <div class="card-sub">Open media library</div>
                     </div>
-                    <button class="copy-btn" onclick="event.preventDefault();event.stopPropagation();copyLink(this,'${url}')" title="Copy link">
-                        ${COPY_ICON}<span>Copy</span>
-                    </button>
                 </a>`;
             }).join('')}
         </div>
