@@ -186,11 +186,11 @@ app.get('/list-table/:account', async (req, res) => {
         const extensions = [...new Set(allAssets.map(a => a.format.toUpperCase()))].sort();
         const acct = req.params.account;
         const acctInfo = {
-            C1: { title: 'Media Library: Core (dog0815braking@gmail.com)', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>' },
-            C2: { title: 'Media Library: Flow (scalable.focus@gmail.com)', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>' },
-            C3: { title: 'Media Library: Venture (mkmueller.mission@gmail.com)', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 15c6.667-6 13.333 0 20-6"/><path d="M9  22c0-5 2-8 2-8s2 3 2 8"/><path d="M12 11c0-3 2-5 2-5s2 2 2 5"/></svg>' }
+            C1: { title: 'Media Library: Core (dog0815braking@gmail.com)', color: '#6366f1', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>' },
+            C2: { title: 'Media Library: Flow (scalable.focus@gmail.com)', color: '#8b5cf6', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>' },
+            C3: { title: 'Media Library: Venture (mkmueller.mission@gmail.com)', color: '#a78bfa', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 15c6.667-6 13.333 0 20-6"/><path d="M9 22c0-5 2-8 2-8s2 3 2 8"/><path d="M12 11c0-3 2-5 2-5s2 2 2 5"/></svg>' }
         };
-        const info = acctInfo[acct] || { title: 'Media Library', icon: '' };
+        const info = acctInfo[acct] || { title: 'Media Library', color: '#6366f1', icon: '' };
 
         res.send(`<!DOCTYPE html>
 <html lang="en">
@@ -211,8 +211,8 @@ app.get('/list-table/:account', async (req, res) => {
         .back-btn:hover { background: var(--surface); color: var(--text); }
         .back-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
         .header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.025em; }
-        .badge { background: var(--accent-light); color: var(--accent); padding: 0.35rem; border-radius: 20px; display: inline-flex; align-items: center; justify-content: center; }
-        .badge svg { width: 18px; height: 18px; }
+        .badge { padding: 0; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; color: white; flex-shrink: 0; }
+        .badge svg { width: 22px; height: 22px; }
         .controls {
             background: var(--surface); border: 1px solid var(--border);
             border-radius: var(--radius); padding: 1rem 1.25rem;
@@ -275,7 +275,7 @@ app.get('/list-table/:account', async (req, res) => {
                 Back
             </a>
             <h1>${info.title}</h1>
-            <span class="badge">${info.icon}</span>
+            <span class="badge" style="background:${info.color}">${info.icon}</span>
         </div>
         <div class="controls">
             <form action="/list-table/${acct}" method="GET">
