@@ -274,8 +274,8 @@ app.get('/list-table/:account', async (req, res) => {
                 <svg viewBox="0 0 24 24"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
                 Back
             </a>
-            <h1>${info.title}</h1>
             <span class="badge" style="background:${info.color}">${info.icon}</span>
+            <h1>${info.title}</h1>
         </div>
         <div class="controls">
             <form action="/list-table/${acct}" method="GET">
