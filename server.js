@@ -185,13 +185,19 @@ app.get('/list-table/:account', async (req, res) => {
 
         const extensions = [...new Set(allAssets.map(a => a.format.toUpperCase()))].sort();
         const acct = req.params.account;
+        const acctInfo = {
+            C1: { title: 'Media Library: Core (dog0815braking@gmail.com)', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>' },
+            C2: { title: 'Media Library: Flow (scalable.focus@gmail.com)', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>' },
+            C3: { title: 'Media Library: Venture (mkmueller.mission@gmail.com)', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 15c6.667-6 13.333 0 20-6"/><path d="M9  22c0-5 2-8 2-8s2 3 2 8"/><path d="M12 11c0-3 2-5 2-5s2 2 2 5"/></svg>' }
+        };
+        const info = acctInfo[acct] || { title: 'Media Library', icon: '' };
 
         res.send(`<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Media Library - ${acct}</title>
+    <title>${info.title}</title>
     ${SHARED_HEAD}
     <style>
         .container { max-width: 1100px; margin: 0 auto; }
@@ -205,7 +211,8 @@ app.get('/list-table/:account', async (req, res) => {
         .back-btn:hover { background: var(--surface); color: var(--text); }
         .back-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
         .header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.025em; }
-        .badge { background: var(--accent-light); color: var(--accent); padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+        .badge { background: var(--accent-light); color: var(--accent); padding: 0.35rem; border-radius: 20px; display: inline-flex; align-items: center; justify-content: center; }
+        .badge svg { width: 18px; height: 18px; }
         .controls {
             background: var(--surface); border: 1px solid var(--border);
             border-radius: var(--radius); padding: 1rem 1.25rem;
@@ -267,8 +274,8 @@ app.get('/list-table/:account', async (req, res) => {
                 <svg viewBox="0 0 24 24"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
                 Back
             </a>
-            <h1>Media Library</h1>
-            <span class="badge">${acct}</span>
+            <h1>${info.title}</h1>
+            <span class="badge">${info.icon}</span>
         </div>
         <div class="controls">
             <form action="/list-table/${acct}" method="GET">
