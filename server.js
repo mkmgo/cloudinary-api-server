@@ -100,6 +100,7 @@ app.get('/', (req, res) => {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cloudinary Control Panel</title>
+    <link rel="icon" type="image/png" href="https://res.cloudinary.com/dp455m4rk/image/upload/v1784729841/media_lib_m3xz45.png">
     ${SHARED_HEAD}
     <style>
         body { display: flex; align-items: center; justify-content: center; }
@@ -198,6 +199,7 @@ app.get('/list-table/:account', async (req, res) => {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${info.title}</title>
+    <link rel="icon" type="image/png" href="https://res.cloudinary.com/dp455m4rk/image/upload/v1784729841/media_lib_m3xz45.png">
     ${SHARED_HEAD}
     <style>
         .container { max-width: 1100px; margin: 0 auto; }
