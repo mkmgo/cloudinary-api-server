@@ -1,20 +1,32 @@
-require('dotenv').config();
-const express = require('express');
-const cloudinary = require('cloudinary').v2;
-const multer = require('multer');
+require("dotenv").config();
+const express = require("express");
+const cloudinary = require("cloudinary").v2;
+const multer = require("multer");
 
 const app = express();
 const port = 3000;
 
 const getCloudinary = (account) => {
-    const configs = {
-        C1: { cloud_name: process.env.C1_NAME, api_key: process.env.C1_KEY, api_secret: process.env.C1_SECRET },
-        C2: { cloud_name: process.env.C2_NAME, api_key: process.env.C2_KEY, api_secret: process.env.C2_SECRET },
-        C3: { cloud_name: process.env.C3_NAME, api_key: process.env.C3_KEY, api_secret: process.env.C3_SECRET }
-    };
-    const cld = require('cloudinary').v2;
-    cld.config(configs[account] || configs.C1);
-    return cld;
+  const configs = {
+    C1: {
+      cloud_name: process.env.C1_NAME,
+      api_key: process.env.C1_KEY,
+      api_secret: process.env.C1_SECRET,
+    },
+    C2: {
+      cloud_name: process.env.C2_NAME,
+      api_key: process.env.C2_KEY,
+      api_secret: process.env.C2_SECRET,
+    },
+    C3: {
+      cloud_name: process.env.C3_NAME,
+      api_key: process.env.C3_KEY,
+      api_secret: process.env.C3_SECRET,
+    },
+  };
+  const cld = require("cloudinary").v2;
+  cld.config(configs[account] || configs.C1);
+  return cld;
 };
 
 const storage = multer.memoryStorage();
@@ -22,23 +34,30 @@ const upload = multer({ storage: storage });
 app.use(express.json());
 
 // --- UPLOAD ROUTE ---
-app.post('/upload/:account', upload.array('images', 10), async (req, res) => {
-    try {
-        if (!req.files || req.files.length === 0) return res.status(400).json({ message: 'No files.' });
-        const cld = getCloudinary(req.params.account);
-        const folderName = req.body.folder || 'my-express-uploads';
-        const uploadResults = [];
+app.post("/upload/:account", upload.array("images", 10), async (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0)
+      return res.status(400).json({ message: "No files." });
+    const cld = getCloudinary(req.params.account);
+    const folderName = req.body.folder || "my-express-uploads";
+    const uploadResults = [];
 
-        for (const file of req.files) {
-            const b64 = Buffer.from(file.buffer).toString('base64');
-            let dataURI = "data:" + file.mimetype + ";base64," + b64;
-            const result = await cld.uploader.upload(dataURI, { folder: folderName, resource_type: "auto" });
-            uploadResults.push({ public_id: result.public_id, url: result.secure_url });
-        }
-        res.status(200).json({ message: 'Uploaded', images: uploadResults });
-    } catch (error) {
-        res.status(500).json({ message: 'Failed', error: error.message });
+    for (const file of req.files) {
+      const b64 = Buffer.from(file.buffer).toString("base64");
+      let dataURI = "data:" + file.mimetype + ";base64," + b64;
+      const result = await cld.uploader.upload(dataURI, {
+        folder: folderName,
+        resource_type: "auto",
+      });
+      uploadResults.push({
+        public_id: result.public_id,
+        url: result.secure_url,
+      });
     }
+    res.status(200).json({ message: "Uploaded", images: uploadResults });
+  } catch (error) {
+    res.status(500).json({ message: "Failed", error: error.message });
+  }
 });
 
 // --- SHARED STYLES ---
@@ -85,16 +104,32 @@ const SHARED_HEAD = `
         }
     </style>`;
 
-const COPY_ICON = '<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
+const COPY_ICON =
+  '<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
 
 // --- DASHBOARD ---
-app.get('/', (req, res) => {
-    const accounts = [
-        { id: 'C1', name: 'Core (dqwm4pdbz)', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>', color: '#6366f1' },
-        { id: 'C2', name: 'Flow (dp455m4rk)', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>', color: '#8b5cf6' },
-        { id: 'C3', name: 'Venture (dmkhsyfzf)', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 15c6.667-6 13.333 0 20-6"/><path d="M9 22c0-5 2-8 2-8s2 3 2 8"/><path d="M12 11c0-3 2-5 2-5s2 2 2 5"/></svg>', color: '#a78bfa' }
-    ];
-    res.send(`<!DOCTYPE html>
+app.get("/", (req, res) => {
+  const accounts = [
+    {
+      id: "C1",
+      name: "Core (dqwm4pdbz)",
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>',
+      color: "#6366f1",
+    },
+    {
+      id: "C2",
+      name: "Flow (dp455m4rk)",
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>',
+      color: "#8b5cf6",
+    },
+    {
+      id: "C3",
+      name: "Venture (dmkhsyfzf)",
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 17a1 1 0 0 0-1 1v1a2 2 0 1 0 2-2z"/><path d="M20.97 3.61a.45.45 0 0 0-.58-.58C10.2 6.6 6.6 10.2 3.03 20.39a.45.45 0 0 0 .58.58C13.8 17.4 17.4 13.8 20.97 3.61"/><path d="m6.707 6.707 10.586 10.586"/><path d="M7 5a2 2 0 1 0-2 2h1a1 1 0 0 0 1-1z"/></svg>',
+      color: "#a78bfa",
+    },
+  ];
+  res.send(`<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -136,8 +171,9 @@ app.get('/', (req, res) => {
             <p>Select an account to manage media</p>
         </div>
         <div class="cards">
-            ${accounts.map((acc) => {
-                const url = '/list-table/' + acc.id;
+            ${accounts
+              .map((acc) => {
+                const url = "/list-table/" + acc.id;
                 return `<a class="card" href="${url}">
                     <div class="card-icon" style="background:${acc.color}">${acc.icon}</div>
                     <div class="card-body">
@@ -145,7 +181,8 @@ app.get('/', (req, res) => {
                         <div class="card-sub">Open media library</div>
                     </div>
                 </a>`;
-            }).join('')}
+              })
+              .join("")}
         </div>
         <div class="footer">Cloudinary API Server &middot; Port 3000</div>
     </div>
@@ -163,21 +200,43 @@ app.get('/', (req, res) => {
 });
 
 // --- TABLE VIEW ---
-app.get('/list-table/:account', async (req, res) => {
-    try {
-        const cld = getCloudinary(req.params.account);
-        const imageList = await cld.api.resources({ max_results: 500, resource_type: 'image' });
-        const videoList = await cld.api.resources({ max_results: 500, resource_type: 'video' });
-        const allAssets = [...imageList.resources, ...videoList.resources];
-        const acct = req.params.account;
-        const acctInfo = {
-            C1: { title: 'Media Library: Core (dqwm4pdbz)', color: '#6366f1', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>' },
-            C2: { title: 'Media Library: Flow (dp455m4rk)', color: '#8b5cf6', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>' },
-            C3: { title: 'Media Library: Venture (dmkhsyfzf)', color: '#a78bfa', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 15c6.667-6 13.333 0 20-6"/><path d="M9 22c0-5 2-8 2-8s2 3 2 8"/><path d="M12 11c0-3 2-5 2-5s2 2 2 5"/></svg>' }
-        };
-        const info = acctInfo[acct] || { title: 'Media Library', color: '#6366f1', icon: '' };
+app.get("/list-table/:account", async (req, res) => {
+  try {
+    const cld = getCloudinary(req.params.account);
+    const imageList = await cld.api.resources({
+      max_results: 500,
+      resource_type: "image",
+    });
+    const videoList = await cld.api.resources({
+      max_results: 500,
+      resource_type: "video",
+    });
+    const allAssets = [...imageList.resources, ...videoList.resources];
+    const acct = req.params.account;
+    const acctInfo = {
+      C1: {
+        title: "Media Library: Core (dqwm4pdbz)",
+        color: "#6366f1",
+        icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>',
+      },
+      C2: {
+        title: "Media Library: Flow (dp455m4rk)",
+        color: "#8b5cf6",
+        icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>',
+      },
+      C3: {
+        title: "Media Library: Venture (dmkhsyfzf)",
+        color: "#a78bfa",
+        icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 17a1 1 0 0 0-1 1v1a2 2 0 1 0 2-2z"/><path d="M20.97 3.61a.45.45 0 0 0-.58-.58C10.2 6.6 6.6 10.2 3.03 20.39a.45.45 0 0 0 .58.58C13.8 17.4 17.4 13.8 20.97 3.61"/><path d="m6.707 6.707 10.586 10.586"/><path d="M7 5a2 2 0 1 0-2 2h1a1 1 0 0 0 1-1z"/></svg>',
+      },
+    };
+    const info = acctInfo[acct] || {
+      title: "Media Library",
+      color: "#6366f1",
+      icon: "",
+    };
 
-        res.send(`<!DOCTYPE html>
+    res.send(`<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -239,20 +298,51 @@ app.get('/list-table/:account', async (req, res) => {
             <table>
                 <thead><tr><th>Preview</th><th>ID</th><th>URL</th><th></th></tr></thead>
                 <tbody>
-                    ${allAssets.length === 0 ? '<tr><td colspan="4"><div class="empty-state">No assets found.</div></td></tr>' :
-                    allAssets.map(asset => {
-                        const isVideo = asset.resource_type === 'video';
-                        const thumbUrl = isVideo
-                            ? asset.secure_url.replace(/\\.[^/.]+$/, '.jpg').replace('/upload/', '/upload/w_100,h_100,c_thumb,so_auto/')
-                            : asset.secure_url.replace('/upload/', '/upload/w_100,h_100,c_thumb/');
-                        const safeUrl = asset.secure_url.replace(/'/g, "\\'");
-                        return '<tr>' +
-                            '<td><img class="thumb" src="' + thumbUrl + '" loading="lazy"></td>' +
-                            '<td class="id-cell" title="' + asset.public_id + '">' + asset.public_id + '</td>' +
-                            '<td class="url-cell" title="' + asset.secure_url + '">' + asset.secure_url + '</td>' +
-                            '<td class="copy-cell"><button class="copy-btn" onclick="copyUrl(this,\'' + safeUrl + '\')" title="Copy URL">' +
-                            COPY_ICON + '</button></td></tr>';
-                    }).join('')}
+                    ${
+                      allAssets.length === 0
+                        ? '<tr><td colspan="4"><div class="empty-state">No assets found.</div></td></tr>'
+                        : allAssets
+                            .map((asset) => {
+                              const isVideo = asset.resource_type === "video";
+                              const thumbUrl = isVideo
+                                ? asset.secure_url
+                                    .replace(/\\.[^/.]+$/, ".jpg")
+                                    .replace(
+                                      "/upload/",
+                                      "/upload/w_100,h_100,c_thumb,so_auto/",
+                                    )
+                                : asset.secure_url.replace(
+                                    "/upload/",
+                                    "/upload/w_100,h_100,c_thumb/",
+                                  );
+                              const safeUrl = asset.secure_url.replace(
+                                /'/g,
+                                "\\'",
+                              );
+                              return (
+                                "<tr>" +
+                                '<td><img class="thumb" src="' +
+                                thumbUrl +
+                                '" loading="lazy"></td>' +
+                                '<td class="id-cell" title="' +
+                                asset.public_id +
+                                '">' +
+                                asset.public_id +
+                                "</td>" +
+                                '<td class="url-cell" title="' +
+                                asset.secure_url +
+                                '">' +
+                                asset.secure_url +
+                                "</td>" +
+                                '<td class="copy-cell"><button class="copy-btn" onclick="copyUrl(this,\'' +
+                                safeUrl +
+                                '\')" title="Copy URL">' +
+                                COPY_ICON +
+                                "</button></td></tr>"
+                              );
+                            })
+                            .join("")
+                    }
                 </tbody>
             </table>
         </div>
@@ -267,9 +357,9 @@ app.get('/list-table/:account', async (req, res) => {
     </script>
 </body>
 </html>`);
-    } catch (error) {
-        res.status(500).send('Error: ' + error.message);
-    }
+  } catch (error) {
+    res.status(500).send("Error: " + error.message);
+  }
 });
 
-app.listen(port, () => console.log('Server: http://localhost:' + port));
+app.listen(port, () => console.log("Server: http://localhost:" + port));
