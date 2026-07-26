@@ -90,9 +90,9 @@ const COPY_ICON = '<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-
 // --- DASHBOARD ---
 app.get('/', (req, res) => {
     const accounts = [
-        { id: 'C1', name: 'Core (dog0815barking@gmail.com)', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>', color: '#6366f1' },
-        { id: 'C2', name: 'Flow (scalable.focus@gmail.com)', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>', color: '#8b5cf6' },
-        { id: 'C3', name: 'Venture (mkmueller.mission@gmail.com)', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 15c6.667-6 13.333 0 20-6"/><path d="M9 22c0-5 2-8 2-8s2 3 2 8"/><path d="M12 11c0-3 2-5 2-5s2 2 2 5"/></svg>', color: '#a78bfa' }
+        { id: 'C1', name: 'Core (dqwm4pdbz)', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>', color: '#6366f1' },
+        { id: 'C2', name: 'Flow (dp455m4rk)', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>', color: '#8b5cf6' },
+        { id: 'C3', name: 'Venture (dmkhsyfzf)', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 15c6.667-6 13.333 0 20-6"/><path d="M9 22c0-5 2-8 2-8s2 3 2 8"/><path d="M12 11c0-3 2-5 2-5s2 2 2 5"/></svg>', color: '#a78bfa' }
     ];
     res.send(`<!DOCTYPE html>
 <html lang="en">
@@ -187,9 +187,9 @@ app.get('/list-table/:account', async (req, res) => {
         const extensions = [...new Set(allAssets.map(a => a.format.toUpperCase()))].sort();
         const acct = req.params.account;
         const acctInfo = {
-            C1: { title: 'Media Library: Core (dog0815braking@gmail.com)', color: '#6366f1', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>' },
-            C2: { title: 'Media Library: Flow (scalable.focus@gmail.com)', color: '#8b5cf6', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>' },
-            C3: { title: 'Media Library: Venture (mkmueller.mission@gmail.com)', color: '#a78bfa', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 15c6.667-6 13.333 0 20-6"/><path d="M9 22c0-5 2-8 2-8s2 3 2 8"/><path d="M12 11c0-3 2-5 2-5s2 2 2 5"/></svg>' }
+            C1: { title: 'Media Library: Core (dqwm4pdbz)', color: '#6366f1', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>' },
+            C2: { title: 'Media Library: Flow (dp455m4rk)', color: '#8b5cf6', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>' },
+            C3: { title: 'Media Library: Venture (dmkhsyfzf)', color: '#a78bfa', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 15c6.667-6 13.333 0 20-6"/><path d="M9 22c0-5 2-8 2-8s2 3 2 8"/><path d="M12 11c0-3 2-5 2-5s2 2 2 5"/></svg>' }
         };
         const info = acctInfo[acct] || { title: 'Media Library', color: '#6366f1', icon: '' };
 
