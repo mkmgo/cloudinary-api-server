@@ -166,24 +166,11 @@ app.get('/', (req, res) => {
 app.get('/list-table/:account', async (req, res) => {
     try {
         const cld = getCloudinary(req.params.account);
-        const selectedFolder = req.query.folder || "";
-        const searchTerm = req.query.search || "";
-        const selectedExt = req.query.extension || "";
-
-        const options = { max_results: 500 };
-        if (selectedFolder) options.prefix = selectedFolder;
-
-        const imageList = await cld.api.resources({ ...options, resource_type: 'image' });
-        const videoList = await cld.api.resources({ ...options, resource_type: 'video' });
+        const imageList = await cld.api.resources({ max_results: 500, resource_type: 'image' });
+        const videoList = await cld.api.resources({ max_results: 500, resource_type: 'video' });
         const folderResult = await cld.api.root_folders();
 
-        let allAssets = [...imageList.resources, ...videoList.resources];
-        const filtered = allAssets.filter(asset => {
-            const matchesSearch = asset.public_id.toLowerCase().includes(searchTerm.toLowerCase());
-            const matchesExt = selectedExt === "" || asset.format.toLowerCase() === selectedExt.toLowerCase();
-            return matchesSearch && matchesExt;
-        });
-
+        const allAssets = [...imageList.resources, ...videoList.resources];
         const extensions = [...new Set(allAssets.map(a => a.format.toUpperCase()))].sort();
         const acct = req.params.account;
         const acctInfo = {
