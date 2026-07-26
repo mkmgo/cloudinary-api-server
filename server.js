@@ -168,8 +168,6 @@ app.get('/list-table/:account', async (req, res) => {
         const cld = getCloudinary(req.params.account);
         const imageList = await cld.api.resources({ max_results: 500, resource_type: 'image' });
         const videoList = await cld.api.resources({ max_results: 500, resource_type: 'video' });
-        const folderResult = await cld.api.root_folders();
-
         const allAssets = [...imageList.resources, ...videoList.resources];
         const extensions = [...new Set(allAssets.map(a => a.format.toUpperCase()))].sort();
         const acct = req.params.account;
@@ -202,27 +200,6 @@ app.get('/list-table/:account', async (req, res) => {
         .header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.025em; }
         .badge { padding: 0; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; color: white; flex-shrink: 0; }
         .badge svg { width: 22px; height: 22px; }
-        .controls {
-            background: var(--surface); border: 1px solid var(--border);
-            border-radius: var(--radius); padding: 1rem 1.25rem;
-            margin-bottom: 1.5rem; box-shadow: var(--shadow);
-        }
-        .controls form { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
-        .controls input, .controls select {
-            font-family: 'Inter', sans-serif; font-size: 0.85rem;
-            padding: 0.55rem 0.85rem; border: 1px solid var(--border);
-            border-radius: var(--radius-sm); background: var(--bg);
-            color: var(--text); outline: none; transition: border-color 0.15s;
-        }
-        .controls input:focus, .controls select:focus { border-color: var(--accent); }
-        .controls input { flex: 1; min-width: 180px; }
-        .controls select { min-width: 140px; }
-        .controls button {
-            font-family: 'Inter', sans-serif; font-size: 0.85rem; font-weight: 600;
-            padding: 0.55rem 1.25rem; background: var(--accent); color: white;
-            border: none; border-radius: var(--radius-sm); cursor: pointer; transition: opacity 0.15s;
-        }
-        .controls button:hover { opacity: 0.9; }
         .stats { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
         .stat-pill {
             background: var(--surface); border: 1px solid var(--border);
@@ -269,7 +246,6 @@ app.get('/list-table/:account', async (req, res) => {
         <div class="stats">
             <span class="stat-pill"><strong>${allAssets.length}</strong> assets</span>
             <span class="stat-pill"><strong>${extensions.length}</strong> formats</span>
-            <span class="stat-pill"><strong>${folderResult.folders.length}</strong> folders</span>
         </div>
         <div class="table-wrap">
             <table>
