@@ -266,22 +266,8 @@ app.get('/list-table/:account', async (req, res) => {
             <span class="badge" style="background:${info.color}">${info.icon}</span>
             <h1>${info.title}</h1>
         </div>
-        <div class="controls">
-            <form action="/list-table/${acct}" method="GET">
-                <input type="text" name="search" placeholder="Search by ID..." value="${searchTerm}">
-                <select name="extension">
-                    <option value="">All Formats</option>
-                    ${extensions.map(ext => '<option value="' + ext.toLowerCase() + '"' + (selectedExt === ext.toLowerCase() ? ' selected' : '') + '>' + ext + '</option>').join('')}
-                </select>
-                <select name="folder">
-                    <option value="">All Folders</option>
-                    ${folderResult.folders.map(f => '<option value="' + f.name + '"' + (selectedFolder === f.name ? ' selected' : '') + '>' + f.name + '</option>').join('')}
-                </select>
-                <button type="submit">Apply</button>
-            </form>
-        </div>
         <div class="stats">
-            <span class="stat-pill"><strong>${filtered.length}</strong> assets</span>
+            <span class="stat-pill"><strong>${allAssets.length}</strong> assets</span>
             <span class="stat-pill"><strong>${extensions.length}</strong> formats</span>
             <span class="stat-pill"><strong>${folderResult.folders.length}</strong> folders</span>
         </div>
@@ -289,8 +275,8 @@ app.get('/list-table/:account', async (req, res) => {
             <table>
                 <thead><tr><th>Preview</th><th>ID</th><th>URL</th><th></th></tr></thead>
                 <tbody>
-                    ${filtered.length === 0 ? '<tr><td colspan="4"><div class="empty-state">No assets found matching your filters.</div></td></tr>' :
-                    filtered.map(asset => {
+                    ${allAssets.length === 0 ? '<tr><td colspan="4"><div class="empty-state">No assets found.</div></td></tr>' :
+                    allAssets.map(asset => {
                         const isVideo = asset.resource_type === 'video';
                         const thumbUrl = isVideo
                             ? asset.secure_url.replace(/\\.[^/.]+$/, '.jpg').replace('/upload/', '/upload/w_100,h_100,c_thumb,so_auto/')
