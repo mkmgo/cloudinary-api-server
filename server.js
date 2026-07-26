@@ -60,6 +60,30 @@ app.post("/upload/:account", upload.array("images", 10), async (req, res) => {
   }
 });
 
+// --- RESOLVE ASSET ---
+app.get("/asset/:account/:public_id(*)", (req, res) => {
+  const cld = getCloudinary(req.params.account);
+  const publicId = req.params.public_id;
+  const { q, f, w, h, o, c, fl, ...rest } = req.query;
+
+  const transformations = [];
+  if (q) transformations.push(`q_${q}`);
+  if (f) transformations.push(`f_${f}`);
+  if (w) transformations.push(`w_${w}`);
+  if (h) transformations.push(`h_${h}`);
+  if (o) transformations.push(`o_${o}`);
+  if (c) transformations.push(`c_${c}`);
+  if (fl) transformations.push(`fl_${fl}`);
+
+  const opts = {};
+  if (transformations.length > 0) {
+    opts.transformation = transformations.join(",");
+  }
+
+  const url = cld.url(publicId, opts);
+  res.json({ public_id: publicId, url });
+});
+
 // --- SHARED STYLES ---
 const SHARED_HEAD = `
     <link rel="preconnect" href="https://fonts.googleapis.com">
