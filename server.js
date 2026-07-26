@@ -169,7 +169,6 @@ app.get('/list-table/:account', async (req, res) => {
         const imageList = await cld.api.resources({ max_results: 500, resource_type: 'image' });
         const videoList = await cld.api.resources({ max_results: 500, resource_type: 'video' });
         const allAssets = [...imageList.resources, ...videoList.resources];
-        const extensions = [...new Set(allAssets.map(a => a.format.toUpperCase()))].sort();
         const acct = req.params.account;
         const acctInfo = {
             C1: { title: 'Media Library: Core (dqwm4pdbz)', color: '#6366f1', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>' },
@@ -200,13 +199,6 @@ app.get('/list-table/:account', async (req, res) => {
         .header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.025em; }
         .badge { padding: 0; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; color: white; flex-shrink: 0; }
         .badge svg { width: 22px; height: 22px; }
-        .stats { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
-        .stat-pill {
-            background: var(--surface); border: 1px solid var(--border);
-            border-radius: 20px; padding: 0.35rem 0.85rem;
-            font-size: 0.78rem; color: var(--text-sec); font-weight: 500;
-        }
-        .stat-pill strong { color: var(--text); }
         .table-wrap {
             background: var(--surface); border: 1px solid var(--border);
             border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
@@ -242,10 +234,6 @@ app.get('/list-table/:account', async (req, res) => {
             </a>
             <span class="badge" style="background:${info.color}">${info.icon}</span>
             <h1>${info.title}</h1>
-        </div>
-        <div class="stats">
-            <span class="stat-pill"><strong>${allAssets.length}</strong> assets</span>
-            <span class="stat-pill"><strong>${extensions.length}</strong> formats</span>
         </div>
         <div class="table-wrap">
             <table>
