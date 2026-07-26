@@ -61,9 +61,10 @@ app.post("/upload/:account", upload.array("images", 10), async (req, res) => {
 });
 
 // --- RESOLVE ASSET ---
-app.get("/asset/:account/*", (req, res) => {
+app.get("/asset/:account", (req, res) => {
   const cld = getCloudinary(req.params.account);
-  const publicId = req.params[0];
+  const publicId = req.query.id;
+  if (!publicId) return res.status(400).json({ message: "Missing ?id= parameter" });
   const { q, f, w, h, o, c, fl, ...rest } = req.query;
 
   const transformations = [];
