@@ -331,10 +331,10 @@ app.get("/list-table/:account", async (req, res) => {
                               const isVideo = asset.resource_type === "video";
                               const thumbUrl = isVideo
                                 ? asset.secure_url
-                                    .replace(/\\.[^/.]+$/, ".jpg")
+                                    .replace(/\.[^/.]+$/, ".jpg")
                                     .replace(
                                       "/upload/",
-                                      "/upload/w_100,h_100,c_thumb,so_auto/",
+                                      "/upload/w_100,h_100,c_thumb,so_auto,f_jpg/",
                                     )
                                 : asset.secure_url.replace(
                                     "/upload/",
