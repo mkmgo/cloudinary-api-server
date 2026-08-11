@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const cloudinary = require("cloudinary").v2;
 const multer = require("multer");
+const path = require("path");
 
 const app = express();
 const port = 3000;
@@ -132,6 +133,9 @@ const SHARED_HEAD = `
 const COPY_ICON =
   '<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
 
+const TRANSFORM_ICON =
+  '<svg viewBox="0 0 24 24"><path d="M4 21v-7"/><path d="M4 10V3"/><path d="M12 21v-9"/><path d="M12 8V3"/><path d="M20 21v-5"/><path d="M20 12V3"/><path d="M1 14h6"/><path d="M9 8h6"/><path d="M17 16h6"/></svg>';
+
 // --- DASHBOARD ---
 app.get("/", (req, res) => {
   const accounts = [
@@ -211,15 +215,6 @@ app.get("/", (req, res) => {
         </div>
         <div class="footer">Cloudinary API Server &middot; Port 3000</div>
     </div>
-    <script>
-        function copyLink(btn, path) {
-            navigator.clipboard.writeText(location.origin + path).then(() => {
-                btn.classList.add('copied');
-                btn.querySelector('span').textContent = 'Copied!';
-                setTimeout(() => { btn.classList.remove('copied'); btn.querySelector('span').textContent = 'Copy'; }, 1500);
-            });
-        }
-    </script>
 </body>
 </html>`);
 });
@@ -227,17 +222,36 @@ app.get("/", (req, res) => {
 // --- TABLE VIEW ---
 app.get("/list-table/:account", async (req, res) => {
   try {
-    const cld = getCloudinary(req.params.account);
-    const imageList = await cld.api.resources({
-      max_results: 500,
-      resource_type: "image",
-    });
-    const videoList = await cld.api.resources({
-      max_results: 500,
-      resource_type: "video",
-    });
-    const allAssets = [...imageList.resources, ...videoList.resources];
     const acct = req.params.account;
+    const cld = getCloudinary(acct);
+    const folder = req.query.folder || "";
+
+    const imageOpts = { max_results: 500, resource_type: "image", type: "upload" };
+    const videoOpts = { max_results: 500, resource_type: "video", type: "upload" };
+    if (folder) {
+      imageOpts.prefix = folder + "/";
+      videoOpts.prefix = folder + "/";
+    }
+
+    const [imageList, videoList] = await Promise.all([
+      cld.api.resources(imageOpts),
+      cld.api.resources(videoOpts),
+    ]);
+
+    const allAssets = [...imageList.resources, ...videoList.resources].sort(
+      (a, b) => new Date(b.created_at) - new Date(a.created_at),
+    );
+
+    let folders = [];
+    try {
+      const folderResult = folder
+        ? await cld.api.sub_folders(folder)
+        : await cld.api.root_folders();
+      folders = (folderResult.folders || []).map((f) => f.name);
+    } catch (e) {
+      folders = [];
+    }
+
     const acctInfo = {
       C1: {
         title: "Media Library: Core (dqwm4pdbz)",
@@ -261,17 +275,105 @@ app.get("/list-table/:account", async (req, res) => {
       icon: "",
     };
 
+    // Breadcrumb from folder path (e.g. foo/bar)
+    const segments = folder ? folder.split("/") : [];
+    const crumbs = [{ label: "Root", path: "" }];
+    let cumulative = "";
+    for (const seg of segments) {
+      cumulative = cumulative ? cumulative + "/" + seg : seg;
+      crumbs.push({ label: seg, path: cumulative });
+    }
+    const breadcrumbHtml = crumbs
+      .map((crumb, i) => {
+        const isLast = i === crumbs.length - 1;
+        if (isLast)
+          return `<span class="crumb current">${crumb.label}</span>`;
+        const href = crumb.path
+          ? `/list-table/${acct}?folder=${encodeURIComponent(crumb.path)}`
+          : `/list-table/${acct}`;
+        return `<a class="crumb" href="${href}">${crumb.label}</a><span class="sep">/</span>`;
+      })
+      .join("");
+
+    const folderChipsHtml = folders
+      .map((f) => {
+        const target = folder ? folder + "/" + f : f;
+        return `<a class="folder-chip" href="/list-table/${acct}?folder=${encodeURIComponent(target)}">${f}</a>`;
+      })
+      .join("");
+
+    const rowsHtml =
+      allAssets.length === 0
+        ? '<tr><td colspan="5"><div class="empty-state">No assets found in this folder.</div></td></tr>'
+        : allAssets
+            .map((asset) => {
+              const isVideo = asset.resource_type === "video";
+              const thumbUrl = isVideo
+                ? asset.secure_url
+                    .replace(/\.[^/.]+$/, ".jpg")
+                    .replace(
+                      "/upload/",
+                      "/upload/w_160,h_160,c_thumb,so_auto,f_jpg/",
+                    )
+                : asset.secure_url.replace(
+                    "/upload/",
+                    "/upload/w_160,h_160,c_thumb/",
+                  );
+              const safeUrl = asset.secure_url.replace(/'/g, "\\'");
+              const encUrl = encodeURIComponent(asset.secure_url);
+              const typeBadge = isVideo
+                ? '<span class="type-badge type-video">VIDEO</span>'
+                : '<span class="type-badge type-image">IMAGE</span>';
+              const uploaded = new Date(asset.created_at).toLocaleString();
+              return (
+                "<tr>" +
+                '<td><a class="thumb-link" href="/inject/' +
+                acct +
+                "?url=" +
+                encUrl +
+                '" target="_blank" title="Open with Grid &amp; Crop tool"><img class="thumb" src="' +
+                thumbUrl +
+                '" loading="lazy"></a></td>' +
+                "<td>" +
+                typeBadge +
+                "</td>" +
+                '<td class="id-cell" title="' +
+                asset.public_id +
+                '">' +
+                asset.public_id +
+                "</td>" +
+                '<td class="date-cell">' +
+                uploaded +
+                "</td>" +
+                '<td class="actions-cell">' +
+                '<button class="copy-btn" onclick="copyUrl(this,\'' +
+                safeUrl +
+                '\')" title="Copy URL">' +
+                COPY_ICON +
+                "</button>" +
+                '<a class="icon-btn" href="/transform/' +
+                acct +
+                "?url=" +
+                encUrl +
+                '" target="_blank" title="Smart Transform">' +
+                TRANSFORM_ICON +
+                "</a>" +
+                "</td></tr>"
+              );
+            })
+            .join("");
+
     res.send(`<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${info.title}</title>
+    <title>${info.title}${folder ? " - " + folder : ""}</title>
     <link rel="icon" type="image/png" href="https://res.cloudinary.com/dp455m4rk/image/upload/v1784729841/media_lib_m3xz45.png">
     ${SHARED_HEAD}
     <style>
-        .container { max-width: 1100px; margin: 0 auto; }
-        .header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.75rem; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem; }
         .back-btn {
             display: inline-flex; align-items: center; gap: 0.4rem;
             text-decoration: none; color: var(--text-sec); font-size: 0.85rem;
@@ -283,6 +385,22 @@ app.get("/list-table/:account", async (req, res) => {
         .header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.025em; }
         .badge { padding: 0; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; color: white; flex-shrink: 0; }
         .badge svg { width: 22px; height: 22px; }
+        .meta-line { margin-left: auto; color: var(--text-sec); font-size: 0.8rem; white-space: nowrap; }
+        .folder-bar { margin-bottom: 1.25rem; }
+        .breadcrumb { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; color: var(--text-sec); margin-bottom: 0.6rem; flex-wrap: wrap; }
+        .breadcrumb .crumb { color: var(--text-sec); text-decoration: none; }
+        .breadcrumb a.crumb:hover { color: var(--accent); }
+        .breadcrumb .crumb.current { color: var(--text); font-weight: 600; }
+        .breadcrumb .sep { color: var(--text-ter); }
+        .folder-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .folder-chip {
+            background: var(--surface); border: 1px solid var(--border); color: var(--text-sec);
+            padding: 0.4rem 0.9rem; border-radius: 999px; font-size: 0.8rem; font-weight: 500;
+            text-decoration: none; transition: all 0.15s; max-width: 220px;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .folder-chip:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+        .no-folders { color: var(--text-ter); font-size: 0.8rem; }
         .table-wrap {
             background: var(--surface); border: 1px solid var(--border);
             border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
@@ -294,18 +412,43 @@ app.get("/list-table/:account", async (req, res) => {
             text-transform: uppercase; letter-spacing: 0.05em;
             color: var(--text-sec); border-bottom: 1px solid var(--border);
         }
-        th:nth-child(1) { width: 80px; }
-        th:nth-child(2) { width: 30%; }
+        th:nth-child(1) { width: 116px; }
+        th:nth-child(2) { width: 88px; }
         th:nth-child(3) { width: auto; }
-        th:nth-child(4) { width: 70px; }
+        th:nth-child(4) { width: 150px; }
+        th:nth-child(5) { width: 96px; }
         tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
         tbody tr:last-child { border-bottom: none; }
         tbody tr:hover { background: var(--surface-hover); }
-        tbody td { padding: 0.65rem 1rem; vertical-align: middle; }
-        .thumb { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border); display: block; }
+        tbody td { padding: 0.75rem 1rem; vertical-align: middle; }
+        .thumb-link { display: inline-block; position: relative; border-radius: 10px; line-height: 0; }
+        .thumb {
+            width: 96px; height: 96px; border-radius: 10px; object-fit: cover;
+            border: 1px solid var(--border); transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+        }
+        .thumb-link:hover .thumb { transform: scale(1.04); box-shadow: var(--shadow-lg); border-color: var(--accent); }
+        .type-badge {
+            display: inline-block; padding: 0.22rem 0.65rem; border-radius: 999px;
+            font-size: 0.66rem; font-weight: 700; letter-spacing: 0.05em; white-space: nowrap;
+        }
+        .type-image { background: #eef2ff; color: #4f46e5; }
+        .type-video { background: #fae8ff; color: #a21caf; }
+        @media (prefers-color-scheme: dark) {
+            .type-image { background: #1e1b4b; color: #a5b4fc; }
+            .type-video { background: #3b0764; color: #e9d5ff; }
+        }
         .id-cell { font-size: 0.82rem; color: var(--text-sec); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .url-cell { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-ter); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .copy-cell { text-align: center; }
+        .date-cell { font-size: 0.78rem; color: var(--text-sec); white-space: nowrap; }
+        .actions-cell { white-space: nowrap; }
+        .icon-btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 30px; height: 30px; border-radius: var(--radius-sm);
+            border: 1px solid var(--border); background: var(--surface-hover);
+            color: var(--text-sec); cursor: pointer; text-decoration: none;
+            margin-left: 0.35rem; transition: all 0.15s; vertical-align: middle;
+        }
+        .icon-btn:hover { background: var(--accent); color: white; border-color: var(--accent); }
+        .icon-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
         .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-ter); font-size: 0.9rem; }
     </style>
 </head>
@@ -318,56 +461,17 @@ app.get("/list-table/:account", async (req, res) => {
             </a>
             <span class="badge" style="background:${info.color}">${info.icon}</span>
             <h1>${info.title}</h1>
+            <span class="meta-line">${allAssets.length} asset${allAssets.length === 1 ? "" : "s"}</span>
+        </div>
+        <div class="folder-bar">
+            <div class="breadcrumb">${breadcrumbHtml}</div>
+            <div class="folder-chips">${folderChipsHtml || '<span class="no-folders">No subfolders</span>'}</div>
         </div>
         <div class="table-wrap">
             <table>
-                <thead><tr><th>Preview</th><th>ID</th><th>URL</th><th></th></tr></thead>
+                <thead><tr><th>Preview</th><th>Type</th><th>ID</th><th>Uploaded</th><th></th></tr></thead>
                 <tbody>
-                    ${
-                      allAssets.length === 0
-                        ? '<tr><td colspan="4"><div class="empty-state">No assets found.</div></td></tr>'
-                        : allAssets
-                            .map((asset) => {
-                              const isVideo = asset.resource_type === "video";
-                              const thumbUrl = isVideo
-                                ? asset.secure_url
-                                    .replace(/\.[^/.]+$/, ".jpg")
-                                    .replace(
-                                      "/upload/",
-                                      "/upload/w_100,h_100,c_thumb,so_auto,f_jpg/",
-                                    )
-                                : asset.secure_url.replace(
-                                    "/upload/",
-                                    "/upload/w_100,h_100,c_thumb/",
-                                  );
-                              const safeUrl = asset.secure_url.replace(
-                                /'/g,
-                                "\\'",
-                              );
-                              return (
-                                "<tr>" +
-                                '<td><img class="thumb" src="' +
-                                thumbUrl +
-                                '" loading="lazy"></td>' +
-                                '<td class="id-cell" title="' +
-                                asset.public_id +
-                                '">' +
-                                asset.public_id +
-                                "</td>" +
-                                '<td class="url-cell" title="' +
-                                asset.secure_url +
-                                '">' +
-                                asset.secure_url +
-                                "</td>" +
-                                '<td class="copy-cell"><button class="copy-btn" onclick="copyUrl(this,\'' +
-                                safeUrl +
-                                '\')" title="Copy URL">' +
-                                COPY_ICON +
-                                "</button></td></tr>"
-                              );
-                            })
-                            .join("")
-                    }
+                    ${rowsHtml}
                 </tbody>
             </table>
         </div>
@@ -385,6 +489,16 @@ app.get("/list-table/:account", async (req, res) => {
   } catch (error) {
     res.status(500).send("Error: " + error.message);
   }
+});
+
+// --- SMART TRANSFORM TOOL (cloudsmart_transform.html) ---
+app.get("/transform/:account", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "transform.html"));
+});
+
+// --- GRID SEGMENT & CROP TOOL (objectsinject.html) ---
+app.get("/inject/:account", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "inject.html"));
 });
 
 app.listen(port, () => console.log("Server: http://localhost:" + port));

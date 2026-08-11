@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tiny Smart Cloudinary Transformer</title>
+    <!-- Tailwind CSS for modern UI -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen p-4 md:p-8">
+
+    <div class="max-w-5xl mx-auto space-y-6">
+        <!-- Header -->
+        <header class="border-b border-slate-800 pb-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">Cloudinary Smart Transformer</h1>
+                <p class="text-sm text-slate-400">Instantly generate optimized URLs and tags for images and videos.</p>
+            </div>
+            <div class="flex gap-2">
+                <span id="assetTypeBadge" class="px-3 py-1 text-xs font-semibold rounded-full bg-slate-800 text-slate-300 border border-slate-700">Auto-Detect</span>
+            </div>
+        </header>
+
+        <!-- Main Workspace -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Controls Column (Left) -->
+            <div class="lg:col-span-6 space-y-4 bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl">
+                <h2 class="text-lg font-semibold text-slate-200">1. Source & Asset</h2>
+                
+                <!-- URL Input -->
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Cloudinary URL or Public ID</label>
+                    <input type="text" id="sourceUrl" placeholder="https://res.cloudinary.com/demo/image/upload/sample.jpg" 
+                        class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-200 focus:outline-none focus:border-blue-500 transition">
+                </div>
+
+                <hr class="border-slate-800 my-4">
+
+                <h2 class="text-lg font-semibold text-slate-200">2. Transformations</h2>
+
+                <!-- Dimensions -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Width (px)</label>
+                        <input type="number" id="width" placeholder="e.g. 800" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Height (px)</label>
+                        <input type="number" id="height" placeholder="e.g. 600" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+                    </div>
+                </div>
+
+                <!-- Crop Mode -->
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Crop Mode (Crop/Scale)</label>
+                    <select id="cropMode" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option value="scale">Scale (Maintain Aspect Ratio)</option>
+                        <option value="fill">Fill (Crop to exact dimensions)</option>
+                        <option value="fit">Fit (Inside dimensions)</option>
+                        <option value="thumb">Thumb (Face/Object focus auto)</option>
+                    </select>
+                </div>
+
+                <!-- Format & Quality -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Format</label>
+                        <select id="format" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+                            <option value="auto">auto (Best for browser)</option>
+                            <option value="webp">WebP</option>
+                            <option value="avif">AVIF</option>
+                            <option value="jpg">JPG</option>
+                            <option value="png">PNG</option>
+                            <option value="mp4">MP4 (Video)</option>
+                            <option value="webm">WebM (Video)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Quality</label>
+                        <select id="quality" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+                            <option value="auto">auto (Optimized)</option>
+                            <option value="q_80">80 (High)</option>
+                            <option value="q_60">60 (Medium)</option>
+                            <option value="q_max">Max (Lossless)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Effects / Enhancements -->
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Smart Effects & AI</label>
+                    <select id="effect" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500">
+                        <option value="">None</option>
+                        <option value="e_grayscale">Grayscale</option>
+                        <option value="e_blur:300">Blur</option>
+                        <option value="e_improve">AI Improve</option>
+                        <option value="e_bgremoval">AI Background Removal</option>
+                    </select>
+                </div>
+
+            </div>
+
+            <!-- Output & Preview Column (Right) -->
+            <div class="lg:col-span-6 space-y-4 flex flex-col">
+                
+                <!-- Output URL Box -->
+                <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl flex-1 flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <h2 class="text-lg font-semibold text-slate-200">3. Generated Output</h2>
+                            <button onclick="copyOutput()" class="text-xs bg-blue-600 hover:bg-blue-500 text-white font-medium px-3 py-1.5 rounded-lg transition">Copy URL</button>
+                        </div>
+                        
+                        <div class="space-y-3">
+                            <div>
+                                <span class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Transformed URL</span>
+                                <div id="outputUrl" class="bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs text-blue-400 font-mono break-all select-all">
+                                    Paste a URL to start...
+                                </div>
+                            </div>
+
+                            <div>
+                                <span class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">HTML Snippet</span>
+                                <div id="outputHtml" class="bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs text-emerald-400 font-mono break-all select-all">
+                                    <!-- Dynamic snippet -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Preview Box -->
+                    <div class="mt-6">
+                        <span class="text-[10px] uppercase tracking-wider text-slate-500 font-bold block mb-2">Live Preview</span>
+                        <div id="previewContainer" class="bg-slate-950 border border-slate-800 rounded-xl h-64 flex items-center justify-center overflow-hidden relative">
+                            <span class="text-xs text-slate-600">Preview will appear here</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Logic -->
+    <script>
+        const sourceUrlInput = document.getElementById('sourceUrl');
+        const widthInput = document.getElementById('width');
+        const heightInput = document.getElementById('height');
+        const cropModeSelect = document.getElementById('cropMode');
+        const formatSelect = document.getElementById('format');
+        const qualitySelect = document.getElementById('quality');
+        const effectSelect = document.getElementById('effect');
+        
+        const outputUrlDiv = document.getElementById('outputUrl');
+        const outputHtmlDiv = document.getElementById('outputHtml');
+        const previewContainer = document.getElementById('previewContainer');
+        const assetTypeBadge = document.getElementById('assetTypeBadge');
+
+        // Listen for changes
+        const inputs = [sourceUrlInput, widthInput, heightInput, cropModeSelect, formatSelect, qualitySelect, effectSelect];
+        inputs.forEach(input => input.addEventListener('input', updateTransformer));
+
+        function updateTransformer() {
+            const rawUrl = sourceUrlInput.value.trim();
+            if (!rawUrl) {
+                outputUrlDiv.innerText = "Paste a URL to start...";
+                outputHtmlDiv.innerText = "";
+                previewContainer.innerHTML = '<span class="text-xs text-slate-600">Preview will appear here</span>';
+                assetTypeBadge.innerText = "Auto-Detect";
+                return;
+            }
+
+            try {
+                // Parse standard Cloudinary URL structure: .../upload/[transforms]/v[version]/...
+                const uploadIndex = rawUrl.indexOf('/upload/');
+                if (uploadIndex === -1) {
+                    outputUrlDiv.innerText = "Invalid Cloudinary URL format (Missing /upload/)";
+                    return;
+                }
+
+                const baseUrl = rawUrl.substring(0, uploadIndex + 8); // includes '/upload/'
+                const remainder = rawUrl.substring(uploadIndex + 8);
+
+                // Strip existing transformation segment if present (anything before 'v' version or filename if no version)
+                let cleanPath = remainder;
+                const parts = remainder.split('/');
+                // If the first part contains transformations (has commas or known flags like c_, w_, h_, f_q_), strip it out
+                if (parts.length > 1 && (parts[0].includes(',') || parts[0].includes('_') && !parts[0].startsWith('v'))) {
+                    parts.shift(); // remove old transformation string
+                }
+                cleanPath = parts.join('/');
+
+                // Build new transformations array
+                let transforms = [];
+
+                const w = widthInput.value;
+                const h = heightInput.value;
+                const crop = cropModeSelect.value;
+                
+                if (w || h) {
+                    let tString = `c_${crop}`;
+                    if (w) tString += `,w_${w}`;
+                    if (h) tString += `,h_${h}`;
+                    transforms.push(tString);
+                }
+
+                const quality = qualitySelect.value;
+                if (quality) {
+                    transforms.push(quality === 'auto' ? 'q_auto' : quality);
+                }
+
+                const format = formatSelect.value;
+                if (format && format !== 'auto') {
+                    transforms.push(`f_${format}`);
+                } else if (format === 'auto') {
+                    transforms.push('f_auto');
+                }
+
+                const effect = effectSelect.value;
+                if (effect) {
+                    transforms.push(effect);
+                }
+
+                // Construct final URL
+                const transformString = transforms.length > 0 ? transforms.join('/') + '/' : '';
+                const finalUrl = baseUrl + transformString + cleanPath;
+
+                // Output results
+                outputUrlDiv.innerText = finalUrl;
+
+                // Detect Asset Type
+                const isVideo = cleanPath.match(/\.(mp4|webm|mov|ogv)$/i) || format === 'mp4' || format === 'webm';
+                assetTypeBadge.innerText = isVideo ? "Video Asset" : "Image Asset";
+                assetTypeBadge.className = `px-3 py-1 text-xs font-semibold rounded-full border ${isVideo ? 'bg-purple-950/50 text-purple-300 border-purple-800' : 'bg-blue-950/50 text-blue-300 border-blue-800'}`;
+
+                // Generate HTML Snippet & Preview
+                if (isVideo) {
+                    const htmlSnippet = `<video src="${finalUrl}" controls autoplay muted loop class="w-full h-auto rounded-lg"></video>`;
+                    outputHtmlDiv.innerText = htmlSnippet;
+                    previewContainer.innerHTML = `<video src="${finalUrl}" controls autoplay muted loop class="max-h-full max-w-full rounded-lg object-contain"></video>`;
+                } else {
+                    const htmlSnippet = `<img src="${finalUrl}" alt="Optimized Cloudinary Asset" loading="lazy" />`;
+                    outputHtmlDiv.innerText = htmlSnippet;
+                    previewContainer.innerHTML = `<img src="${finalUrl}" alt="Preview" class="max-h-full max-w-full rounded-lg object-contain">`;
+                }
+
+            } catch (e) {
+                outputUrlDiv.innerText = "Error parsing URL structure.";
+            }
+        }
+
+        function copyOutput() {
+            const textToCopy = outputUrlDiv.innerText;
+            navigator.clipboard.writeText(textToCopy);
+            alert("Transformed URL copied to clipboard!");
+        }
+
+        // Preload from query param (?url=...)
+        (function () {
+            var params = new URLSearchParams(window.location.search);
+            var url = params.get('url');
+            if (url && sourceUrlInput) {
+                sourceUrlInput.value = url;
+                updateTransformer();
+            }
+        })();
+    </script>
+</body>
+</html>

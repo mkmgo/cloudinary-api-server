@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cloudinary Grid Segment & Crop Generator</title>
+  <style>
+    :root {
+      --bg-color: #f8fafc;
+      --card-bg: #ffffff;
+      --accent-color: #2563eb;
+      --text-color: #1e293b;
+      --border-color: #e2e8f0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 2rem;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 1.75rem;
+    }
+
+    .panel {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .panel-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      color: var(--text-color);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .form-group.full-width {
+      grid-column: 1 / -1;
+    }
+
+    label {
+      font-weight: 600;
+      font-size: 0.875rem;
+    }
+
+    input, select {
+      padding: 0.6rem;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      font-size: 0.95rem;
+    }
+
+    button {
+      background-color: var(--accent-color);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.25rem;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    button:hover {
+      background-color: #1d4ed8;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    .action-buttons-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .btn-secondary {
+      background-color: #0d9488;
+    }
+
+    .btn-secondary:hover {
+      background-color: #0f766e;
+    }
+
+    .btn-purple {
+      background-color: #7c3aed;
+    }
+
+    .btn-purple:hover {
+      background-color: #6d28d9;
+    }
+
+    .output-grid {
+      display: grid;
+      gap: 1.5rem;
+      margin-top: 1rem;
+    }
+
+    .segment-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .preview-box {
+      width: 120px;
+      height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #f1f5f9;
+      border-radius: 6px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .preview-box img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    .url-container {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .url-input {
+      font-family: monospace;
+      font-size: 0.85rem;
+      background-color: #f8fafc;
+      width: 100%;
+    }
+
+    .meta-info {
+      font-size: 0.8rem;
+      color: #64748b;
+    }
+
+    .btn-copy {
+      align-self: flex-start;
+      padding: 0.4rem 0.8rem;
+      font-size: 0.8rem;
+      background-color: #475569;
+    }
+
+    .btn-copy:hover {
+      background-color: #334155;
+    }
+
+    .viewer-display-container {
+      background: #0f172a;
+      border-radius: 8px;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 350px;
+    }
+
+    .viewer-image-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1.5rem;
+      width: 100%;
+    }
+
+    .viewer-image-card {
+      background: #1e293b;
+      padding: 1rem;
+      border-radius: 8px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .viewer-image-card img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 6px;
+    }
+
+    .slideshow-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      width: 100%;
+    }
+
+    .slideshow-box img {
+      max-width: 100%;
+      max-height: 350px;
+      object-fit: contain;
+      border-radius: 8px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    }
+
+    .slideshow-controls {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .collage-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      width: 100%;
+    }
+
+    .collage-preview-box {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #1e293b;
+      padding: 1rem;
+      border-radius: 8px;
+    }
+
+    .collage-preview-box img {
+      max-width: 100%;
+      height: auto;
+      max-height: 70vh;
+      object-fit: contain;
+    }
+
+    .media-display {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .media-display img,
+    .media-display video {
+      max-width: 100%;
+      max-height: 60vh;
+      border-radius: 8px;
+      background: #000;
+    }
+
+    .media-open-link {
+      font-size: 0.85rem;
+      color: var(--accent-color);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Cloudinary Grid Cropper & URL Generator</h1>
+
+  <div class="panel" id="mediaPanel" style="display: none;">
+    <div class="panel-title">Selected Media</div>
+    <div class="media-display" id="mediaDisplay"></div>
+  </div>
+  
+  <div class="panel">
+    <div class="form-grid">
+      <div class="form-group full-width">
+        <label for="imgUrl">Cloudinary Base Image URL</label>
+        <input type="text" id="imgUrl" value="https://res.cloudinary.com/dp455m4rk/image/upload/v1786050302/A-F_yhrs9s.png" placeholder="https://res.cloudinary.com/your-cloud/image/upload/v12345/image.png">
+      </div>
+
+      <div class="form-group">
+        <label for="rows">Rows</label>
+        <input type="number" id="rows" value="2" min="1" max="10">
+      </div>
+
+      <div class="form-group">
+        <label for="cols">Columns</label>
+        <input type="number" id="cols" value="3" min="1" max="10">
+      </div>
+
+      <div class="form-group">
+        <label for="shape">Crop Shape</label>
+        <select id="shape">
+          <option value="circle">Circular (r_max)</option>
+          <option value="square">Square / Rectangular</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="border">Border Effect</label>
+        <select id="border">
+          <option value="none">None</option>
+          <option value="bo_5px_solid_white" selected>5px Solid White</option>
+          <option value="bo_5px_solid_black">5px Solid Black</option>
+        </select>
+      </div>
+
+      <!-- Text Overlay Parameters -->
+      <div class="form-group full-width">
+        <label for="wordList">Labels (Comma-separated, matching sprite order)</label>
+        <input type="text" id="wordList" value="Apple, Bee, Cat, Dog, Elephant, Flower" placeholder="e.g. Apple, Bee, Cat, Dog, Elephant, Flower">
+      </div>
+
+      <div class="form-group">
+        <label for="fontSize">Font Size (px)</label>
+        <input type="number" id="fontSize" value="48" min="10" max="200">
+      </div>
+
+      <div class="form-group">
+        <label for="fontFamily">Font Family</label>
+        <select id="fontFamily">
+          <option value="Arial" selected>Arial</option>
+          <option value="Comic%20Sans%20MS">Comic Sans MS</option>
+          <option value="Verdana">Verdana</option>
+          <option value="Roboto">Roboto</option>
+          <option value="Trebuchet%20MS">Trebuchet MS</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="textColor">Text Color</label>
+        <input type="color" id="textColor" value="#1e293b">
+      </div>
+
+      <div class="form-group">
+        <label for="gravity">Position</label>
+        <select id="gravity">
+          <option value="south" selected>Bottom (South)</option>
+          <option value="north">Top (North)</option>
+          <option value="center">Center</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="offsetY">Vertical Offset (Y px)</label>
+        <input type="number" id="offsetY" value="20">
+      </div>
+
+      <div class="form-group full-width" style="margin-top: 0.5rem;">
+        <button onclick="generateCrops()">Generate Segment URLs</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Viewer & Slideshow Actions Panel -->
+  <div class="panel">
+    <div class="panel-title" id="viewerTitle">Viewer & Slideshow Display</div>
+    <div class="action-buttons-grid">
+      <button class="btn-secondary" onclick="renderInPageViewer(true)">1) Show All Images (With Text)</button>
+      <button class="btn-secondary" onclick="renderInPageViewer(false)">2) Show All Images (Without Text)</button>
+      <button class="btn-purple" onclick="renderInPageSlideshow(true, false)">3) Slideshow 1-6 Random (With Text)</button>
+      <button class="btn-purple" onclick="renderInPageSlideshow(true, true)">4) Single Image Slideshow Random (With Text)</button>
+      <button class="btn-purple" onclick="renderInPageSlideshow(false, false)">5) Slideshow 1-6 Random (Without Text)</button>
+    </div>
+  </div>
+
+  <!-- Interactive Viewer / Slideshow Render Area -->
+  <div class="panel" id="interactivePanel" style="display: none;">
+    <div class="panel-title" id="interactiveTitle">Interactive View</div>
+    <div class="viewer-display-container" id="interactiveDisplay"></div>
+  </div>
+
+  <div id="results" class="output-grid"></div>
+</div>
+
+<script>
+  let activeSlides = [];
+  let currentSlideIndex = 0;
+
+  async function getImageDimensions(url) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+      img.onerror = () => reject('Failed to load image');
+      img.src = url;
+    });
+  }
+
+  function parseCloudinaryUrl(url) {
+    const uploadIndex = url.indexOf('/upload/');
+    if (uploadIndex === -1) return null;
+
+    const baseUrl = url.substring(0, uploadIndex + 8);
+    const rest = url.substring(uploadIndex + 8);
+
+    const parts = rest.split('/');
+    let publicIdWithExt = parts[parts.length - 1];
+
+    if (parts.length > 1 && parts[0].startsWith('v') && !isNaN(parts[0].substring(1))) {
+      publicIdWithExt = parts.slice(0).join('/');
+    } else if (parts.length > 1) {
+      publicIdWithExt = parts.filter(p => !p.includes('_')).join('/');
+    }
+
+    const safePublicId = publicIdWithExt.replace(/^v\d+\//, '').replace(/\.[^/.]+$/, '').replace(/\//g, ':');
+
+    return { baseUrl, publicIdWithExt, safePublicId };
+  }
+
+  async function buildSegmentData() {
+    const rawUrl = document.getElementById('imgUrl').value.trim();
+    const rows = parseInt(document.getElementById('rows').value);
+    const cols = parseInt(document.getElementById('cols').value);
+    const shape = document.getElementById('shape').value;
+    const border = document.getElementById('border').value;
+
+    const wordListStr = document.getElementById('wordList').value;
+    const words = wordListStr ? wordListStr.split(',').map(w => w.trim()) : [];
+    const fontSize = document.getElementById('fontSize').value;
+    const fontFamily = document.getElementById('fontFamily').value;
+    const textColor = document.getElementById('textColor').value.replace('#', '');
+    const gravity = document.getElementById('gravity').value;
+    const offsetY = parseInt(document.getElementById('offsetY').value) || 0;
+
+    const parsed = parseCloudinaryUrl(rawUrl);
+    if (!parsed) throw new Error('Invalid Cloudinary URL structure.');
+
+    const dimensions = await getImageDimensions(rawUrl);
+    const cellWidth = Math.floor(dimensions.width / cols);
+    const cellHeight = Math.floor(dimensions.height / rows);
+
+    const canvasCenterX = Math.floor(dimensions.width / 2);
+    const canvasCenterY = Math.floor(dimensions.height / 2);
+
+    const segments = [];
+    let index = 0;
+
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const x = c * cellWidth;
+        const y = r * cellHeight;
+
+        let baseTransforms = [`c_crop,w_${cellWidth},h_${cellHeight},x_${x},y_${y}`];
+        if (shape === 'circle') baseTransforms.push('r_max');
+        if (border !== 'none') baseTransforms.push(border);
+
+        const urlWithoutText = `${parsed.baseUrl}${baseTransforms.join('/')}/${parsed.publicIdWithExt}`;
+
+        let textTransforms = [...baseTransforms];
+        const currentWord = words[index] || '';
+        if (currentWord) {
+          const encodedWord = encodeURIComponent(currentWord);
+          textTransforms.push(`l_text:${fontFamily}_${fontSize}:${encodedWord},co_rgb:${textColor},g_${gravity},y_${offsetY}`);
+        }
+        const urlWithText = `${parsed.baseUrl}${textTransforms.join('/')}/${parsed.publicIdWithExt}`;
+
+        segments.push({
+          index: index + 1,
+          row: r + 1,
+          col: c + 1,
+          word: currentWord,
+          urlWithText: urlWithText,
+          urlWithoutText: urlWithoutText,
+          cellWidth,
+          cellHeight,
+          x,
+          y
+        });
+
+        index++;
+      }
+    }
+
+    let collageTransformsWithText = ['o_0'];
+    let collageTransformsNoText = ['o_0'];
+
+    segments.forEach(seg => {
+      let subCrop = `c_crop,w_${seg.cellWidth},h_${seg.cellHeight},x_${seg.x},y_${seg.y}`;
+      if (shape === 'circle') subCrop += `/r_max`;
+      if (border !== 'none') subCrop += `/${border}`;
+
+      const cropLayer = `l_${parsed.safePublicId}/${subCrop}/fl_layer_apply,g_north_west,x_${seg.x},y_${seg.y}`;
+      collageTransformsWithText.push(cropLayer);
+      collageTransformsNoText.push(cropLayer);
+
+      if (seg.word) {
+        const encodedWord = encodeURIComponent(seg.word);
+        const cellCenterX = seg.x + Math.floor(seg.cellWidth / 2);
+        
+        let cellCenterY = seg.y + Math.floor(seg.cellHeight / 2);
+        if (gravity === 'south') cellCenterY = seg.y + seg.cellHeight - offsetY;
+        if (gravity === 'north') cellCenterY = seg.y + offsetY;
+
+        const offX = cellCenterX - canvasCenterX;
+        const offY = cellCenterY - canvasCenterY;
+
+        const textLayer = `l_text:${fontFamily}_${fontSize}:${encodedWord},co_rgb:${textColor}/fl_layer_apply,g_center,x_${offX},y_${offY}`;
+        collageTransformsWithText.push(textLayer);
+      }
+    });
+
+    // Constrain output width to 1200px max so it fits comfortably in standard browser tabs
+    collageTransformsWithText.push('w_1200,c_limit');
+    collageTransformsNoText.push('w_1200,c_limit');
+
+    const collageUrlWithText = `${parsed.baseUrl}${collageTransformsWithText.join('/')}/${parsed.publicIdWithExt}`;
+    const collageUrlNoText = `${parsed.baseUrl}${collageTransformsNoText.join('/')}/${parsed.publicIdWithExt}`;
+
+    return { segments, collageUrlWithText, collageUrlNoText };
+  }
+
+  async function generateCrops() {
+    const resultsContainer = document.getElementById('results');
+    resultsContainer.innerHTML = '<p>Loading image metadata...</p>';
+
+    try {
+      const { segments } = await buildSegmentData();
+      resultsContainer.innerHTML = '';
+      resultsContainer.style.gridTemplateColumns = `repeat(1, 1fr)`;
+
+      segments.forEach(seg => {
+        const card = document.createElement('div');
+        card.className = 'segment-card';
+        card.innerHTML = `
+          <div class="preview-box">
+            <img src="${seg.urlWithText}" alt="Segment ${seg.index}">
+          </div>
+          <div class="url-container">
+            <strong>Segment ${seg.index} (Row ${seg.row}, Col ${seg.col}) ${seg.word ? `- "${seg.word}"` : ''}</strong>
+            <span class="meta-info">Crop Box generated successfully</span>
+            <input type="text" class="url-input" readonly value="${seg.urlWithText}" id="url-${seg.index}">
+            <button class="btn-copy" onclick="copyToClipboard('url-${seg.index}')">Copy URL</button>
+          </div>
+        `;
+        resultsContainer.appendChild(card);
+      });
+    } catch (err) {
+      resultsContainer.innerHTML = `<p style="color: red;">Error: ${err.message || err}</p>`;
+    }
+  }
+
+  function copyToClipboard(inputId) {
+    const input = document.getElementById(inputId);
+    input.select();
+    navigator.clipboard.writeText(input.value);
+    alert('URL copied to clipboard!');
+  }
+
+  async function renderInPageViewer(withText) {
+    try {
+      const { segments, collageUrlWithText, collageUrlNoText } = await buildSegmentData();
+      const panel = document.getElementById('interactivePanel');
+      const title = document.getElementById('interactiveTitle');
+      const container = document.getElementById('interactiveDisplay');
+
+      const collageUrl = withText ? collageUrlWithText : collageUrlNoText;
+
+      title.innerText = withText ? 'Image Grid & Cloudinary Collage (With Text)' : 'Image Grid & Cloudinary Collage (Without Text)';
+      panel.style.display = 'block';
+
+      let gridHtml = `<div class="collage-container">
+        <div class="viewer-image-grid">`;
+
+      segments.forEach(s => {
+        gridHtml += `
+          <div class="viewer-image-card">
+            <img src="${withText ? s.urlWithText : s.urlWithoutText}" alt="Segment ${s.index}">
+          </div>
+        `;
+      });
+
+      gridHtml += `</div>
+        <hr style="border: 0; border-top: 1px solid var(--border-color); width: 100%; margin: 1.5rem 0;">
+        <div class="url-container">
+          <strong style="color: white;">Adapted Cloudinary Collage Single Image Link</strong>
+          <span class="meta-info">This single Cloudinary URL dynamically stitches all segmented cropped images into one dynamic layout constrained to browser screen width.</span>
+          <input type="text" class="url-input" readonly value="${collageUrl}" id="collage-url">
+          <button class="btn-copy" onclick="copyToClipboard('collage-url')">Copy Collage Link</button>
+        </div>
+        <div class="collage-preview-box">
+          <img src="${collageUrl}" alt="Cloudinary Combined Collage">
+        </div>
+      </div>`;
+
+      container.innerHTML = gridHtml;
+      panel.scrollIntoView({ behavior: 'smooth' });
+    } catch (err) {
+      alert('Error: ' + err.message);
+    }
+  }
+
+  async function renderInPageSlideshow(withText, singleRandomOnly = false) {
+    try {
+      const { segments } = await buildSegmentData();
+      if (segments.length === 0) return alert('No segments found.');
+
+      let slideSegments = [...segments];
+
+      for (let i = slideSegments.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [slideSegments[i], slideSegments[j]] = [slideSegments[j], slideSegments[i]];
+      }
+
+      if (singleRandomOnly) {
+        const randomIndex = Math.floor(Math.random() * slideSegments.length);
+        slideSegments = [slideSegments[randomIndex]];
+      }
+
+      activeSlides = slideSegments.map(s => withText ? s.urlWithText : s.urlWithoutText);
+      currentSlideIndex = 0;
+
+      const panel = document.getElementById('interactivePanel');
+      const title = document.getElementById('interactiveTitle');
+      const container = document.getElementById('interactiveDisplay');
+
+      title.innerText = singleRandomOnly 
+        ? 'Single Random Image Slideshow' 
+        : `Random Order Slideshow (${withText ? 'With Text' : 'Without Text'})`;
+
+      panel.style.display = 'block';
+
+      container.innerHTML = `
+        <div class="slideshow-box">
+          <img id="embeddedSlideImg" src="${activeSlides[0]}" alt="Slide">
+          <div class="slideshow-controls">
+            <button onclick="prevEmbeddedSlide()">&#8592; Previous</button>
+            <button onclick="nextEmbeddedSlide()">Next &#8594;</button>
+          </div>
+        </div>
+      `;
+
+      panel.scrollIntoView({ behavior: 'smooth' });
+    } catch (err) {
+      alert('Error starting slideshow: ' + err.message);
+    }
+  }
+
+  function updateEmbeddedSlide() {
+    const img = document.getElementById('embeddedSlideImg');
+    if (img && activeSlides.length > 0) {
+      img.src = activeSlides[currentSlideIndex];
+    }
+  }
+
+  function nextEmbeddedSlide() {
+    if (activeSlides.length === 0) return;
+    currentSlideIndex = (currentSlideIndex + 1) % activeSlides.length;
+    updateEmbeddedSlide();
+  }
+
+  function prevEmbeddedSlide() {
+    if (activeSlides.length === 0) return;
+    currentSlideIndex = (currentSlideIndex - 1 + activeSlides.length) % activeSlides.length;
+    updateEmbeddedSlide();
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowRight') nextEmbeddedSlide();
+    if (e.key === 'ArrowLeft') prevEmbeddedSlide();
+  });
+
+  (function () {
+    var params = new URLSearchParams(window.location.search);
+    var preloadUrl = params.get('url');
+    if (preloadUrl) {
+      document.getElementById('imgUrl').value = preloadUrl;
+      var isVideo = /\.(mp4|webm|mov|ogv)$/i.test(preloadUrl);
+      var panel = document.getElementById('mediaPanel');
+      var display = document.getElementById('mediaDisplay');
+      panel.style.display = 'block';
+      display.innerHTML = isVideo
+        ? '<video src="' + preloadUrl + '" controls autoplay muted loop></video>'
+        : '<img src="' + preloadUrl + '" alt="Selected media">';
+      var link = document.createElement('a');
+      link.className = 'media-open-link';
+      link.href = preloadUrl;
+      link.target = '_blank';
+      link.textContent = 'Open full-size media in new tab';
+      display.appendChild(link);
+    }
+  })();
+
+  window.onload = function() {
+    var params = new URLSearchParams(window.location.search);
+    var u = params.get('url');
+    var isVideo = u && /\.(mp4|webm|mov|ogv)$/i.test(u);
+    if (!isVideo) generateCrops();
+  };
+</script>
+
+</body>
+</html>
