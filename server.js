@@ -30,6 +30,99 @@ const getCloudinary = (account) => {
   return cld;
 };
 
+// Collect an asset folder path and all its descendant folders (recursive).
+const collectFolderPaths = async (cld, parent) => {
+  const paths = [parent];
+  const queue = [parent];
+  while (queue.length) {
+    const cur = queue.shift();
+    try {
+      const sub = await cld.api.sub_folders(cur);
+      for (const s of sub.folders || []) {
+        paths.push(s.path);
+        queue.push(s.path);
+      }
+    } catch (e) {
+      // ignore unreadable folders
+    }
+  }
+  return paths;
+};
+
+// List every asset stored directly in one asset folder (paginated, newest first).
+const listByAssetFolder = async (cld, folderPath) => {
+  const out = [];
+  let cursor;
+  do {
+    const opts = { max_results: 500, direction: "desc" };
+    if (cursor) opts.next_cursor = cursor;
+    const res = await cld.api.resources_by_asset_folder(folderPath, opts);
+    out.push(...(res.resources || []));
+    cursor = res.next_cursor;
+  } while (cursor);
+  return out;
+};
+
+// List assets in a folder and all its subfolders (newest first).
+// 1) Search API subtree expression "asset_folder:folder/*" returns the
+//    folder and every nested subfolder in one query.
+// 2) Falls back to walking the sub-folder tree with resources_by_asset_folder.
+// 3) Finally falls back to public-id prefix matching (fixed folder mode).
+const listAssetsInFolderTree = async (cld, folder) => {
+  const seen = new Map();
+  const add = (arr) => {
+    for (const a of arr || []) seen.set(a.asset_id || a.public_id, a);
+  };
+
+  try {
+    let cursor = "";
+    do {
+      const res = await cld.search
+        .expression(`asset_folder:"${folder}/*"`)
+        .max_results(500)
+        .sort_by("created_at", "desc")
+        .next_cursor(cursor)
+        .execute();
+      add(res.resources);
+      cursor = res.next_cursor || "";
+    } while (cursor);
+    if (seen.size) return [...seen.values()];
+  } catch (e) {
+    seen.clear();
+  }
+
+  try {
+    const paths = await collectFolderPaths(cld, folder);
+    for (const p of paths) add(await listByAssetFolder(cld, p));
+    if (seen.size)
+      return [...seen.values()].sort(
+        (a, b) => new Date(b.created_at) - new Date(a.created_at),
+      );
+  } catch (e) {
+    seen.clear();
+  }
+
+  try {
+    const imageList = await cld.api.resources({
+      max_results: 500,
+      resource_type: "image",
+      type: "upload",
+      prefix: folder + "/",
+    });
+    const videoList = await cld.api.resources({
+      max_results: 500,
+      resource_type: "video",
+      type: "upload",
+      prefix: folder + "/",
+    });
+    add([...imageList.resources, ...videoList.resources]);
+  } catch (e) {}
+
+  return [...seen.values()].sort(
+    (a, b) => new Date(b.created_at) - new Date(a.created_at),
+  );
+};
+
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 app.use(express.json());
@@ -226,21 +319,18 @@ app.get("/list-table/:account", async (req, res) => {
     const cld = getCloudinary(acct);
     const folder = req.query.folder || "";
 
-    const imageOpts = { max_results: 500, resource_type: "image", type: "upload" };
-    const videoOpts = { max_results: 500, resource_type: "video", type: "upload" };
+    let allAssets;
     if (folder) {
-      imageOpts.prefix = folder + "/";
-      videoOpts.prefix = folder + "/";
+      allAssets = await listAssetsInFolderTree(cld, folder);
+    } else {
+      const [imageList, videoList] = await Promise.all([
+        cld.api.resources({ max_results: 500, resource_type: "image", type: "upload" }),
+        cld.api.resources({ max_results: 500, resource_type: "video", type: "upload" }),
+      ]);
+      allAssets = [...imageList.resources, ...videoList.resources].sort(
+        (a, b) => new Date(b.created_at) - new Date(a.created_at),
+      );
     }
-
-    const [imageList, videoList] = await Promise.all([
-      cld.api.resources(imageOpts),
-      cld.api.resources(videoOpts),
-    ]);
-
-    const allAssets = [...imageList.resources, ...videoList.resources].sort(
-      (a, b) => new Date(b.created_at) - new Date(a.created_at),
-    );
 
     let folders = [];
     try {
