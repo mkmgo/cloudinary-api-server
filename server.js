@@ -115,13 +115,7 @@ const listAssetsInFolderTree = async (cld, folder) => {
       type: "upload",
       prefix: folder + "/",
     });
-    const audioList = await cld.api.resources({
-      max_results: 500,
-      resource_type: "audio",
-      type: "upload",
-      prefix: folder + "/",
-    });
-    add([...imageList.resources, ...videoList.resources, ...audioList.resources]);
+    add([...imageList.resources, ...videoList.resources]);
   } catch (e) {}
 
   return [...seen.values()].sort(
@@ -235,6 +229,20 @@ const COPY_ICON =
 const TRANSFORM_ICON =
   '<svg viewBox="0 0 24 24"><path d="M4 21v-7"/><path d="M4 10V3"/><path d="M12 21v-9"/><path d="M12 8V3"/><path d="M20 21v-5"/><path d="M20 12V3"/><path d="M1 14h6"/><path d="M9 8h6"/><path d="M17 16h6"/></svg>';
 
+const AUDIO_FORMATS = new Set([
+  "aac",
+  "aiff",
+  "amr",
+  "flac",
+  "m4a",
+  "mp3",
+  "oga",
+  "ogg",
+  "opus",
+  "wav",
+  "wma",
+]);
+
 const AUDIO_PLACEHOLDER =
   "data:image/svg+xml," +
   encodeURIComponent(
@@ -340,12 +348,11 @@ app.get("/list-table/:account", async (req, res) => {
     if (folder) {
       allAssets = await listAssetsInFolderTree(cld, folder);
     } else {
-      const [imageList, videoList, audioList] = await Promise.all([
+      const [imageList, videoList] = await Promise.all([
         cld.api.resources({ max_results: 500, resource_type: "image", type: "upload" }),
         cld.api.resources({ max_results: 500, resource_type: "video", type: "upload" }),
-        cld.api.resources({ max_results: 500, resource_type: "audio", type: "upload" }),
       ]);
-      allAssets = [...imageList.resources, ...videoList.resources, ...audioList.resources].sort(
+      allAssets = [...imageList.resources, ...videoList.resources].sort(
         (a, b) => new Date(b.created_at) - new Date(a.created_at),
       );
     }
@@ -416,7 +423,7 @@ app.get("/list-table/:account", async (req, res) => {
         : allAssets
             .map((asset) => {
               const isVideo = asset.resource_type === "video";
-              const isAudio = asset.resource_type === "audio";
+              const isAudio = isVideo && AUDIO_FORMATS.has(asset.format);
               const safeUrl = asset.secure_url.replace(/'/g, "\\'");
               const encUrl = encodeURIComponent(asset.secure_url);
               const uploaded = new Date(asset.created_at).toLocaleString();
@@ -596,6 +603,11 @@ app.get("/list-table/:account", async (req, res) => {
         .icon-btn:hover { background: var(--accent); color: white; border-color: var(--accent); }
         .icon-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
         .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-ter); font-size: 0.9rem; }
+        .cost-note {
+            background: var(--accent-light); border: 1px solid var(--border);
+            border-radius: var(--radius-sm); padding: 0.6rem 0.9rem;
+            font-size: 0.75rem; color: var(--text-sec); margin-bottom: 1.25rem;
+        }
     </style>
 </head>
 <body>
@@ -609,6 +621,7 @@ app.get("/list-table/:account", async (req, res) => {
             <h1>${info.title}</h1>
             <span class="meta-line">${allAssets.length} asset${allAssets.length === 1 ? "" : "s"}</span>
         </div>
+        <div class="cost-note">Thumbnails and previews are Cloudinary transformations and count toward your monthly quota. Copying URLs and opening the tools are free.</div>
         <div class="folder-bar">
             <div class="breadcrumb">${breadcrumbHtml}</div>
             <div class="folder-chips">${folderChipsHtml || '<span class="no-folders">No subfolders</span>'}</div>

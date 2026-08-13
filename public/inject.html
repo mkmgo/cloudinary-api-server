@@ -377,8 +377,9 @@
       <button class="btn-secondary" onclick="renderInPageViewer(true)">1) Show All Images (With Text)</button>
       <button class="btn-secondary" onclick="renderInPageViewer(false)">2) Show All Images (Without Text)</button>
       <button class="btn-purple" onclick="renderInPageSlideshow(true, false)">3) Slideshow 1-6 Random (With Text)</button>
-      <button class="btn-purple" onclick="renderInPageSlideshow(true, true)">4) Single Image Slideshow Random (With Text)</button>
-      <button class="btn-purple" onclick="renderInPageSlideshow(false, false)">5) Slideshow 1-6 Random (Without Text)</button>
+      <button class="btn-purple" onclick="renderInPageSlideshow(false, false)">4) Slideshow 1-6 Random (Without Text)</button>
+      <button class="btn-purple" onclick="renderInPageSlideshow(true, true)">5) Single Image Slideshow Random (With Text)</button>
+      <button class="btn-purple" onclick="downloadCropLinksTxt()">6) Download All Crop Links (.txt)</button>
     </div>
   </div>
 
@@ -394,6 +395,16 @@
 <script>
   let activeSlides = [];
   let currentSlideIndex = 0;
+  let previewCostConfirmed = false;
+  let lastSegments = [];
+
+  function confirmPreviewCost() {
+    if (previewCostConfirmed) return true;
+    previewCostConfirmed = confirm(
+      'Rendering previews downloads Cloudinary transformation URLs, which count toward your monthly transformation and bandwidth quota. Continue?'
+    );
+    return previewCostConfirmed;
+  }
 
   async function getImageDimensions(url) {
     return new Promise((resolve, reject) => {
@@ -524,10 +535,13 @@
     const collageUrlWithText = `${parsed.baseUrl}${collageTransformsWithText.join('/')}/${parsed.publicIdWithExt}`;
     const collageUrlNoText = `${parsed.baseUrl}${collageTransformsNoText.join('/')}/${parsed.publicIdWithExt}`;
 
+    lastSegments = segments;
     return { segments, collageUrlWithText, collageUrlNoText };
   }
 
   async function generateCrops() {
+    if (!confirmPreviewCost()) return;
+
     const resultsContainer = document.getElementById('results');
     resultsContainer.innerHTML = '<p>Loading image metadata...</p>';
 
@@ -557,6 +571,24 @@
     }
   }
 
+  function downloadCropLinksTxt() {
+    if (!lastSegments || lastSegments.length === 0) {
+      alert('Generate segment URLs first (click "Generate Segment URLs").');
+      return;
+    }
+    const lines = lastSegments.map((s) =>
+      `${s.index}. ${s.word ? s.word + ' - ' : ''}${s.urlWithText}`
+    );
+    const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'crop-links.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+  }
+
   function copyToClipboard(inputId) {
     const input = document.getElementById(inputId);
     input.select();
@@ -565,6 +597,7 @@
   }
 
   async function renderInPageViewer(withText) {
+    if (!confirmPreviewCost()) return;
     try {
       const { segments, collageUrlWithText, collageUrlNoText } = await buildSegmentData();
       const panel = document.getElementById('interactivePanel');
@@ -608,6 +641,7 @@
   }
 
   async function renderInPageSlideshow(withText, singleRandomOnly = false) {
+    if (!confirmPreviewCost()) return;
     try {
       const { segments } = await buildSegmentData();
       if (segments.length === 0) return alert('No segments found.');
@@ -687,7 +721,7 @@
       var display = document.getElementById('mediaDisplay');
       panel.style.display = 'block';
       display.innerHTML = isVideo
-        ? '<video src="' + preloadUrl + '" controls autoplay muted loop></video>'
+        ? '<video src="' + preloadUrl + '" controls preload="metadata"></video>'
         : '<img src="' + preloadUrl + '" alt="Selected media">';
       var link = document.createElement('a');
       link.className = 'media-open-link';
@@ -702,7 +736,14 @@
     var params = new URLSearchParams(window.location.search);
     var u = params.get('url');
     var isVideo = u && /\.(mp4|webm|mov|ogv)$/i.test(u);
-    if (!isVideo) generateCrops();
+    if (u && !isVideo) {
+      var resultsContainer = document.getElementById('results');
+      resultsContainer.innerHTML =
+        '<div class="panel" style="background:#fffbeb;border:1px solid #fde68a;color:#92400e;">' +
+        '  <strong>Image loaded.</strong> Segment previews are not generated automatically because each preview ' +
+        'downloads a Cloudinary transformation that counts toward your monthly quota. ' +
+        'Click <strong>Generate Segment URLs</strong> to render the previews.</div>';
+    }
   };
 </script>
 

@@ -97,6 +97,10 @@
                         <option value="e_improve">AI Improve</option>
                         <option value="e_bgremoval">AI Background Removal</option>
                     </select>
+                    <label class="flex items-center gap-2 mt-2 text-xs text-slate-400 cursor-pointer select-none">
+                        <input type="checkbox" id="aiCostAck" class="rounded accent-emerald-500">
+                        I understand AI effects cost 75–100 transformation credits each
+                    </label>
                 </div>
 
             </div>
@@ -109,7 +113,10 @@
                     <div>
                         <div class="flex justify-between items-center mb-2">
                             <h2 class="text-lg font-semibold text-slate-200">3. Generated Output</h2>
-                            <button onclick="copyOutput()" class="text-xs bg-blue-600 hover:bg-blue-500 text-white font-medium px-3 py-1.5 rounded-lg transition">Copy URL</button>
+                            <div class="flex gap-2">
+                                <button onclick="loadPreview()" class="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-3 py-1.5 rounded-lg transition">Refresh Preview</button>
+                                <button onclick="copyOutput()" class="text-xs bg-blue-600 hover:bg-blue-500 text-white font-medium px-3 py-1.5 rounded-lg transition">Copy URL</button>
+                            </div>
                         </div>
                         
                         <div class="space-y-3">
@@ -131,7 +138,8 @@
 
                     <!-- Live Preview Box -->
                     <div class="mt-6">
-                        <span class="text-[10px] uppercase tracking-wider text-slate-500 font-bold block mb-2">Live Preview</span>
+                        <span class="text-[10px] uppercase tracking-wider text-slate-500 font-bold block mb-2">Preview</span>
+                        <p class="text-[10px] text-slate-600 mb-2">Loading a preview renders a Cloudinary transformation that counts toward your monthly quota. Generating/copying the URL is free.</p>
                         <div id="previewContainer" class="bg-slate-950 border border-slate-800 rounded-xl h-64 flex items-center justify-center overflow-hidden relative">
                             <span class="text-xs text-slate-600">Preview will appear here</span>
                         </div>
@@ -156,17 +164,58 @@
         const outputHtmlDiv = document.getElementById('outputHtml');
         const previewContainer = document.getElementById('previewContainer');
         const assetTypeBadge = document.getElementById('assetTypeBadge');
+        const aiCostAck = document.getElementById('aiCostAck');
+
+        let previewState = { url: '', isVideo: false };
+
+        function syncAiEffectOptions() {
+            const aiEffects = ['e_improve', 'e_bgremoval'];
+            aiEffects.forEach((v) => {
+                const opt = effectSelect.querySelector('option[value="' + v + '"]');
+                if (opt) opt.disabled = !aiCostAck.checked;
+            });
+            if (!aiCostAck.checked && aiEffects.includes(effectSelect.value)) {
+                effectSelect.value = '';
+            }
+        }
+        aiCostAck.addEventListener('change', () => {
+            syncAiEffectOptions();
+            updateTransformer();
+        });
+        syncAiEffectOptions();
+
+        function loadPreview() {
+            if (!previewState.url) {
+                previewContainer.innerHTML = '<span class="text-xs text-slate-600">Preview will appear here</span>';
+                return;
+            }
+            if (previewState.isVideo) {
+                previewContainer.innerHTML =
+                    '<video src="' + previewState.url + '" controls preload="metadata" class="max-h-full max-w-full rounded-lg object-contain"></video>';
+            } else {
+                previewContainer.innerHTML =
+                    '<img src="' + previewState.url + '" alt="Preview" class="max-h-full max-w-full rounded-lg object-contain">';
+            }
+        }
 
         // Listen for changes
         const inputs = [sourceUrlInput, widthInput, heightInput, cropModeSelect, formatSelect, qualitySelect, effectSelect];
-        inputs.forEach(input => input.addEventListener('input', updateTransformer));
+        let previewTimer = null;
+        inputs.forEach((input) =>
+            input.addEventListener('input', () => {
+                updateTransformer();
+                clearTimeout(previewTimer);
+                previewTimer = setTimeout(loadPreview, 400);
+            }),
+        );
 
         function updateTransformer() {
             const rawUrl = sourceUrlInput.value.trim();
             if (!rawUrl) {
                 outputUrlDiv.innerText = "Paste a URL to start...";
                 outputHtmlDiv.innerText = "";
-                previewContainer.innerHTML = '<span class="text-xs text-slate-600">Preview will appear here</span>';
+                previewState = { url: '', isVideo: false };
+                loadPreview();
                 assetTypeBadge.innerText = "Auto-Detect";
                 return;
             }
@@ -234,15 +283,16 @@
                 assetTypeBadge.innerText = isVideo ? "Video Asset" : "Image Asset";
                 assetTypeBadge.className = `px-3 py-1 text-xs font-semibold rounded-full border ${isVideo ? 'bg-purple-950/50 text-purple-300 border-purple-800' : 'bg-blue-950/50 text-blue-300 border-blue-800'}`;
 
-                // Generate HTML Snippet & Preview
+                // Store for preview (preview loads a transformation; URL generation is free)
+                previewState = { url: finalUrl, isVideo };
+
+                // Generate HTML Snippet (text only — no Cloudinary cost)
                 if (isVideo) {
                     const htmlSnippet = `<video src="${finalUrl}" controls autoplay muted loop class="w-full h-auto rounded-lg"></video>`;
                     outputHtmlDiv.innerText = htmlSnippet;
-                    previewContainer.innerHTML = `<video src="${finalUrl}" controls autoplay muted loop class="max-h-full max-w-full rounded-lg object-contain"></video>`;
                 } else {
                     const htmlSnippet = `<img src="${finalUrl}" alt="Optimized Cloudinary Asset" loading="lazy" />`;
                     outputHtmlDiv.innerText = htmlSnippet;
-                    previewContainer.innerHTML = `<img src="${finalUrl}" alt="Preview" class="max-h-full max-w-full rounded-lg object-contain">`;
                 }
 
             } catch (e) {
@@ -263,6 +313,7 @@
             if (url && sourceUrlInput) {
                 sourceUrlInput.value = url;
                 updateTransformer();
+                loadPreview();
             }
         })();
     </script>
