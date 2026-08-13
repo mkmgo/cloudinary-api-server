@@ -115,7 +115,13 @@ const listAssetsInFolderTree = async (cld, folder) => {
       type: "upload",
       prefix: folder + "/",
     });
-    add([...imageList.resources, ...videoList.resources]);
+    const audioList = await cld.api.resources({
+      max_results: 500,
+      resource_type: "audio",
+      type: "upload",
+      prefix: folder + "/",
+    });
+    add([...imageList.resources, ...videoList.resources, ...audioList.resources]);
   } catch (e) {}
 
   return [...seen.values()].sort(
@@ -229,6 +235,17 @@ const COPY_ICON =
 const TRANSFORM_ICON =
   '<svg viewBox="0 0 24 24"><path d="M4 21v-7"/><path d="M4 10V3"/><path d="M12 21v-9"/><path d="M12 8V3"/><path d="M20 21v-5"/><path d="M20 12V3"/><path d="M1 14h6"/><path d="M9 8h6"/><path d="M17 16h6"/></svg>';
 
+const AUDIO_PLACEHOLDER =
+  "data:image/svg+xml," +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96">' +
+      '<rect width="96" height="96" rx="10" fill="#fffbeb"/>' +
+      '<path d="M38 64V34l26-4v30" fill="none" stroke="#b45309" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '<circle cx="32" cy="64" r="6" fill="#b45309"/>' +
+      '<circle cx="58" cy="60" r="6" fill="#b45309"/>' +
+      "</svg>",
+  );
+
 // --- DASHBOARD ---
 app.get("/", (req, res) => {
   const accounts = [
@@ -323,11 +340,12 @@ app.get("/list-table/:account", async (req, res) => {
     if (folder) {
       allAssets = await listAssetsInFolderTree(cld, folder);
     } else {
-      const [imageList, videoList] = await Promise.all([
+      const [imageList, videoList, audioList] = await Promise.all([
         cld.api.resources({ max_results: 500, resource_type: "image", type: "upload" }),
         cld.api.resources({ max_results: 500, resource_type: "video", type: "upload" }),
+        cld.api.resources({ max_results: 500, resource_type: "audio", type: "upload" }),
       ]);
-      allAssets = [...imageList.resources, ...videoList.resources].sort(
+      allAssets = [...imageList.resources, ...videoList.resources, ...audioList.resources].sort(
         (a, b) => new Date(b.created_at) - new Date(a.created_at),
       );
     }
@@ -398,32 +416,74 @@ app.get("/list-table/:account", async (req, res) => {
         : allAssets
             .map((asset) => {
               const isVideo = asset.resource_type === "video";
-              const thumbUrl = isVideo
-                ? asset.secure_url
-                    .replace(/\.[^/.]+$/, ".jpg")
-                    .replace(
-                      "/upload/",
-                      "/upload/w_160,h_160,c_thumb,so_auto,f_jpg/",
-                    )
-                : asset.secure_url.replace(
-                    "/upload/",
-                    "/upload/w_160,h_160,c_thumb/",
-                  );
+              const isAudio = asset.resource_type === "audio";
               const safeUrl = asset.secure_url.replace(/'/g, "\\'");
               const encUrl = encodeURIComponent(asset.secure_url);
-              const typeBadge = isVideo
-                ? '<span class="type-badge type-video">VIDEO</span>'
-                : '<span class="type-badge type-image">IMAGE</span>';
               const uploaded = new Date(asset.created_at).toLocaleString();
+
+              let thumbHtml, typeBadge, toolLinks;
+              if (isAudio) {
+                thumbHtml =
+                  '<img class="thumb" src="' +
+                  AUDIO_PLACEHOLDER +
+                  '" alt="audio" title="' +
+                  asset.public_id +
+                  '">';
+                typeBadge = '<span class="type-badge type-audio">AUDIO</span>';
+                toolLinks = "";
+              } else if (isVideo) {
+                const thumbUrl = asset.secure_url
+                  .replace(/\.[^/.]+$/, ".jpg")
+                  .replace(
+                    "/upload/",
+                    "/upload/w_160,h_160,c_thumb,so_auto,f_jpg/",
+                  );
+                thumbHtml =
+                  '<a class="thumb-link" href="/inject/' +
+                  acct +
+                  "?url=" +
+                  encUrl +
+                  '" target="_blank" title="Open with Grid &amp; Crop tool"><img class="thumb" src="' +
+                  thumbUrl +
+                  '" loading="lazy"></a>';
+                typeBadge = '<span class="type-badge type-video">VIDEO</span>';
+                toolLinks =
+                  '<a class="icon-btn" href="/transform/' +
+                  acct +
+                  "?url=" +
+                  encUrl +
+                  '" target="_blank" title="Smart Transform">' +
+                  TRANSFORM_ICON +
+                  "</a>";
+              } else {
+                const thumbUrl = asset.secure_url.replace(
+                  "/upload/",
+                  "/upload/w_160,h_160,c_thumb/",
+                );
+                thumbHtml =
+                  '<a class="thumb-link" href="/inject/' +
+                  acct +
+                  "?url=" +
+                  encUrl +
+                  '" target="_blank" title="Open with Grid &amp; Crop tool"><img class="thumb" src="' +
+                  thumbUrl +
+                  '" loading="lazy"></a>';
+                typeBadge = '<span class="type-badge type-image">IMAGE</span>';
+                toolLinks =
+                  '<a class="icon-btn" href="/transform/' +
+                  acct +
+                  "?url=" +
+                  encUrl +
+                  '" target="_blank" title="Smart Transform">' +
+                  TRANSFORM_ICON +
+                  "</a>";
+              }
+
               return (
                 "<tr>" +
-                '<td><a class="thumb-link" href="/inject/' +
-                acct +
-                "?url=" +
-                encUrl +
-                '" target="_blank" title="Open with Grid &amp; Crop tool"><img class="thumb" src="' +
-                thumbUrl +
-                '" loading="lazy"></a></td>' +
+                '<td class="thumb-cell">' +
+                thumbHtml +
+                "</td>" +
                 "<td>" +
                 typeBadge +
                 "</td>" +
@@ -441,13 +501,7 @@ app.get("/list-table/:account", async (req, res) => {
                 '\')" title="Copy URL">' +
                 COPY_ICON +
                 "</button>" +
-                '<a class="icon-btn" href="/transform/' +
-                acct +
-                "?url=" +
-                encUrl +
-                '" target="_blank" title="Smart Transform">' +
-                TRANSFORM_ICON +
-                "</a>" +
+                toolLinks +
                 "</td></tr>"
               );
             })
@@ -523,9 +577,11 @@ app.get("/list-table/:account", async (req, res) => {
         }
         .type-image { background: #eef2ff; color: #4f46e5; }
         .type-video { background: #fae8ff; color: #a21caf; }
+        .type-audio { background: #fffbeb; color: #b45309; }
         @media (prefers-color-scheme: dark) {
             .type-image { background: #1e1b4b; color: #a5b4fc; }
             .type-video { background: #3b0764; color: #e9d5ff; }
+            .type-audio { background: #451a03; color: #fcd34d; }
         }
         .id-cell { font-size: 0.82rem; color: var(--text-sec); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .date-cell { font-size: 0.78rem; color: var(--text-sec); white-space: nowrap; }
