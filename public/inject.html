@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cloudinary Grid Segment & Crop Generator</title>
+  <title>Grip Cropper</title>
   <style>
     :root {
       --bg-color: #f8fafc;
@@ -277,12 +277,122 @@
       color: var(--accent-color);
       text-decoration: none;
     }
+
+    .grip-controls-panel {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1rem 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .grip-controls-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-color);
+      margin-bottom: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .grip-nudge-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .grip-nudge-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #64748b;
+      min-width: 50px;
+    }
+
+    .grip-nudge-btn {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 0.35rem 0.65rem;
+      font-size: 0.85rem;
+      cursor: pointer;
+      color: var(--text-color);
+      transition: all 0.15s;
+      font-family: inherit;
+      font-weight: 600;
+      line-height: 1;
+    }
+
+    .grip-nudge-btn:hover {
+      background: var(--accent-color);
+      color: white;
+      border-color: var(--accent-color);
+    }
+
+    .grip-nudge-btn:active {
+      transform: scale(0.95);
+    }
+
+    .grip-segment-grid {
+      display: grid;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .grip-segment-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .grip-segment-card img {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      border-radius: 6px;
+      background: #f1f5f9;
+    }
+
+    .grip-segment-meta {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #64748b;
+      text-align: center;
+    }
+
+    .grip-copy-btn {
+      background: #475569;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 0.35rem 0.7rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+
+    .grip-copy-btn:hover {
+      background: #334155;
+    }
+
+    .grip-copy-btn.copied {
+      background: #22c55e;
+    }
   </style>
 </head>
 <body>
 
 <div class="container">
-  <h1>Cloudinary Grid Cropper & URL Generator</h1>
+  <h1>Grip Cropper</h1>
 
   <div class="panel" id="mediaPanel" style="display: none;">
     <div class="panel-title">Selected Media</div>
@@ -309,59 +419,70 @@
       <div class="form-group">
         <label for="shape">Crop Shape</label>
         <select id="shape">
+          <option value="square" selected>Square / Rectangular</option>
           <option value="circle">Circular (r_max)</option>
-          <option value="square">Square / Rectangular</option>
         </select>
       </div>
 
       <div class="form-group">
         <label for="border">Border Effect</label>
         <select id="border">
-          <option value="none">None</option>
-          <option value="bo_5px_solid_white" selected>5px Solid White</option>
+          <option value="none" selected>None</option>
+          <option value="bo_5px_solid_white">5px Solid White</option>
           <option value="bo_5px_solid_black">5px Solid Black</option>
         </select>
       </div>
 
       <!-- Text Overlay Parameters -->
       <div class="form-group full-width">
-        <label for="wordList">Labels (Comma-separated, matching sprite order)</label>
-        <input type="text" id="wordList" value="Apple, Bee, Cat, Dog, Elephant, Flower" placeholder="e.g. Apple, Bee, Cat, Dog, Elephant, Flower">
+        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+          <input type="checkbox" id="showLabels" onchange="document.getElementById('labelsSection').style.display = this.checked ? '' : 'none'">
+          Show Labels (Text Overlay)
+        </label>
       </div>
 
-      <div class="form-group">
-        <label for="fontSize">Font Size (px)</label>
-        <input type="number" id="fontSize" value="48" min="10" max="200">
-      </div>
+      <div id="labelsSection" style="display:none;">
+        <div class="form-grid">
+          <div class="form-group full-width">
+            <label for="wordList">Labels (Comma-separated, matching sprite order)</label>
+            <input type="text" id="wordList" value="" placeholder="e.g. Apple, Bee, Cat, Dog, Elephant, Flower">
+          </div>
 
-      <div class="form-group">
-        <label for="fontFamily">Font Family</label>
-        <select id="fontFamily">
-          <option value="Arial" selected>Arial</option>
-          <option value="Comic%20Sans%20MS">Comic Sans MS</option>
-          <option value="Verdana">Verdana</option>
-          <option value="Roboto">Roboto</option>
-          <option value="Trebuchet%20MS">Trebuchet MS</option>
-        </select>
-      </div>
+          <div class="form-group">
+            <label for="fontSize">Font Size (px)</label>
+            <input type="number" id="fontSize" value="48" min="10" max="200">
+          </div>
 
-      <div class="form-group">
-        <label for="textColor">Text Color</label>
-        <input type="color" id="textColor" value="#1e293b">
-      </div>
+          <div class="form-group">
+            <label for="fontFamily">Font Family</label>
+            <select id="fontFamily">
+              <option value="Arial" selected>Arial</option>
+              <option value="Comic%20Sans%20MS">Comic Sans MS</option>
+              <option value="Verdana">Verdana</option>
+              <option value="Roboto">Roboto</option>
+              <option value="Trebuchet%20MS">Trebuchet MS</option>
+            </select>
+          </div>
 
-      <div class="form-group">
-        <label for="gravity">Position</label>
-        <select id="gravity">
-          <option value="south" selected>Bottom (South)</option>
-          <option value="north">Top (North)</option>
-          <option value="center">Center</option>
-        </select>
-      </div>
+          <div class="form-group">
+            <label for="textColor">Text Color</label>
+            <input type="color" id="textColor" value="#1e293b">
+          </div>
 
-      <div class="form-group">
-        <label for="offsetY">Vertical Offset (Y px)</label>
-        <input type="number" id="offsetY" value="20">
+          <div class="form-group">
+            <label for="gravity">Position</label>
+            <select id="gravity">
+              <option value="south" selected>Bottom (South)</option>
+              <option value="north">Top (North)</option>
+              <option value="center">Center</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="offsetY">Vertical Offset (Y px)</label>
+            <input type="number" id="offsetY" value="20">
+          </div>
+        </div>
       </div>
 
       <div class="form-group full-width" style="margin-top: 0.5rem;">
@@ -397,6 +518,9 @@
   let currentSlideIndex = 0;
   let previewCostConfirmed = false;
   let lastSegments = [];
+  let segmentStates = [];
+  let gripRows = 0;
+  let gripCols = 0;
 
   function confirmPreviewCost() {
     if (previewCostConfirmed) return true;
@@ -418,22 +542,38 @@
   function parseCloudinaryUrl(url) {
     const uploadIndex = url.indexOf('/upload/');
     if (uploadIndex === -1) return null;
-
     const baseUrl = url.substring(0, uploadIndex + 8);
     const rest = url.substring(uploadIndex + 8);
-
     const parts = rest.split('/');
     let publicIdWithExt = parts[parts.length - 1];
-
     if (parts.length > 1 && parts[0].startsWith('v') && !isNaN(parts[0].substring(1))) {
       publicIdWithExt = parts.slice(0).join('/');
     } else if (parts.length > 1) {
       publicIdWithExt = parts.filter(p => !p.includes('_')).join('/');
     }
-
     const safePublicId = publicIdWithExt.replace(/^v\d+\//, '').replace(/\.[^/.]+$/, '').replace(/\//g, ':');
-
     return { baseUrl, publicIdWithExt, safePublicId };
+  }
+
+  function buildSegmentUrl(parsed, x, y, cellWidth, cellHeight, shape, border, word, fontOpts) {
+    let transforms = [`c_crop,w_${cellWidth},h_${cellHeight},x_${x},y_${y}`];
+    if (shape === 'circle') transforms.push('r_max');
+    if (border !== 'none') transforms.push(border);
+    if (word && fontOpts) {
+      const encodedWord = encodeURIComponent(word);
+      transforms.push(`l_text:${fontOpts.fontFamily}_${fontOpts.fontSize}:${encodedWord},co_rgb:${fontOpts.textColor},g_${fontOpts.gravity},y_${fontOpts.offsetY}`);
+    }
+    return `${parsed.baseUrl}${transforms.join('/')}/${parsed.publicIdWithExt}`;
+  }
+
+  function getFontOpts() {
+    return {
+      fontFamily: document.getElementById('fontFamily').value,
+      fontSize: document.getElementById('fontSize').value,
+      textColor: document.getElementById('textColor').value.replace('#', ''),
+      gravity: document.getElementById('gravity').value,
+      offsetY: parseInt(document.getElementById('offsetY').value) || 0
+    };
   }
 
   async function buildSegmentData() {
@@ -442,96 +582,55 @@
     const cols = parseInt(document.getElementById('cols').value);
     const shape = document.getElementById('shape').value;
     const border = document.getElementById('border').value;
-
     const wordListStr = document.getElementById('wordList').value;
     const words = wordListStr ? wordListStr.split(',').map(w => w.trim()) : [];
-    const fontSize = document.getElementById('fontSize').value;
-    const fontFamily = document.getElementById('fontFamily').value;
-    const textColor = document.getElementById('textColor').value.replace('#', '');
-    const gravity = document.getElementById('gravity').value;
-    const offsetY = parseInt(document.getElementById('offsetY').value) || 0;
+    const fontOpts = getFontOpts();
 
     const parsed = parseCloudinaryUrl(rawUrl);
     if (!parsed) throw new Error('Invalid Cloudinary URL structure.');
-
     const dimensions = await getImageDimensions(rawUrl);
     const cellWidth = Math.floor(dimensions.width / cols);
     const cellHeight = Math.floor(dimensions.height / rows);
-
     const canvasCenterX = Math.floor(dimensions.width / 2);
     const canvasCenterY = Math.floor(dimensions.height / 2);
 
     const segments = [];
     let index = 0;
-
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
         const x = c * cellWidth;
         const y = r * cellHeight;
-
-        let baseTransforms = [`c_crop,w_${cellWidth},h_${cellHeight},x_${x},y_${y}`];
-        if (shape === 'circle') baseTransforms.push('r_max');
-        if (border !== 'none') baseTransforms.push(border);
-
-        const urlWithoutText = `${parsed.baseUrl}${baseTransforms.join('/')}/${parsed.publicIdWithExt}`;
-
-        let textTransforms = [...baseTransforms];
         const currentWord = words[index] || '';
-        if (currentWord) {
-          const encodedWord = encodeURIComponent(currentWord);
-          textTransforms.push(`l_text:${fontFamily}_${fontSize}:${encodedWord},co_rgb:${textColor},g_${gravity},y_${offsetY}`);
-        }
-        const urlWithText = `${parsed.baseUrl}${textTransforms.join('/')}/${parsed.publicIdWithExt}`;
-
-        segments.push({
-          index: index + 1,
-          row: r + 1,
-          col: c + 1,
-          word: currentWord,
-          urlWithText: urlWithText,
-          urlWithoutText: urlWithoutText,
-          cellWidth,
-          cellHeight,
-          x,
-          y
-        });
-
+        const urlWithText = buildSegmentUrl(parsed, x, y, cellWidth, cellHeight, shape, border, currentWord, fontOpts);
+        const urlWithoutText = buildSegmentUrl(parsed, x, y, cellWidth, cellHeight, shape, border, '', null);
+        segments.push({ index: index + 1, row: r + 1, col: c + 1, word: currentWord, urlWithText, urlWithoutText, cellWidth, cellHeight, x, y });
         index++;
       }
     }
 
     let collageTransformsWithText = ['o_0'];
     let collageTransformsNoText = ['o_0'];
-
     segments.forEach(seg => {
       let subCrop = `c_crop,w_${seg.cellWidth},h_${seg.cellHeight},x_${seg.x},y_${seg.y}`;
       if (shape === 'circle') subCrop += `/r_max`;
       if (border !== 'none') subCrop += `/${border}`;
-
       const cropLayer = `l_${parsed.safePublicId}/${subCrop}/fl_layer_apply,g_north_west,x_${seg.x},y_${seg.y}`;
       collageTransformsWithText.push(cropLayer);
       collageTransformsNoText.push(cropLayer);
-
       if (seg.word) {
         const encodedWord = encodeURIComponent(seg.word);
         const cellCenterX = seg.x + Math.floor(seg.cellWidth / 2);
-        
         let cellCenterY = seg.y + Math.floor(seg.cellHeight / 2);
-        if (gravity === 'south') cellCenterY = seg.y + seg.cellHeight - offsetY;
-        if (gravity === 'north') cellCenterY = seg.y + offsetY;
-
+        if (fontOpts.gravity === 'south') cellCenterY = seg.y + seg.cellHeight - fontOpts.offsetY;
+        if (fontOpts.gravity === 'north') cellCenterY = seg.y + fontOpts.offsetY;
         const offX = cellCenterX - canvasCenterX;
         const offY = cellCenterY - canvasCenterY;
-
-        const textLayer = `l_text:${fontFamily}_${fontSize}:${encodedWord},co_rgb:${textColor}/fl_layer_apply,g_center,x_${offX},y_${offY}`;
+        const textLayer = `l_text:${fontOpts.fontFamily}_${fontOpts.fontSize}:${encodedWord},co_rgb:${fontOpts.textColor}/fl_layer_apply,g_center,x_${offX},y_${offY}`;
         collageTransformsWithText.push(textLayer);
       }
     });
-
-    // Constrain output width to 1200px max so it fits comfortably in standard browser tabs
     collageTransformsWithText.push('w_1200,c_limit');
     collageTransformsNoText.push('w_1200,c_limit');
-
     const collageUrlWithText = `${parsed.baseUrl}${collageTransformsWithText.join('/')}/${parsed.publicIdWithExt}`;
     const collageUrlNoText = `${parsed.baseUrl}${collageTransformsNoText.join('/')}/${parsed.publicIdWithExt}`;
 
@@ -541,34 +640,122 @@
 
   async function generateCrops() {
     if (!confirmPreviewCost()) return;
-
     const resultsContainer = document.getElementById('results');
     resultsContainer.innerHTML = '<p>Loading image metadata...</p>';
 
     try {
       const { segments } = await buildSegmentData();
-      resultsContainer.innerHTML = '';
-      resultsContainer.style.gridTemplateColumns = `repeat(1, 1fr)`;
+      gripRows = parseInt(document.getElementById('rows').value);
+      gripCols = parseInt(document.getElementById('cols').value);
+      const shape = document.getElementById('shape').value;
+      const border = document.getElementById('border').value;
+      const parsed = parseCloudinaryUrl(document.getElementById('imgUrl').value.trim());
+      const fontOpts = getFontOpts();
 
-      segments.forEach(seg => {
-        const card = document.createElement('div');
-        card.className = 'segment-card';
-        card.innerHTML = `
-          <div class="preview-box">
-            <img src="${seg.urlWithText}" alt="Segment ${seg.index}">
-          </div>
-          <div class="url-container">
-            <strong>Segment ${seg.index} (Row ${seg.row}, Col ${seg.col}) ${seg.word ? `- "${seg.word}"` : ''}</strong>
-            <span class="meta-info">Crop Box generated successfully</span>
-            <input type="text" class="url-input" readonly value="${seg.urlWithText}" id="url-${seg.index}">
-            <button class="btn-copy" onclick="copyToClipboard('url-${seg.index}')">Copy URL</button>
-          </div>
-        `;
-        resultsContainer.appendChild(card);
+      segmentStates = segments.map(s => ({
+        x: s.x, y: s.y,
+        cellWidth: s.cellWidth, cellHeight: s.cellHeight,
+        word: s.word, row: s.row, col: s.col, index: s.index
+      }));
+
+      let html = '';
+
+      // Controls wrapper — columns left, rows right
+      html += '<div style="display:flex;gap:1rem;margin-bottom:1rem;flex-wrap:wrap;">';
+
+      // Column controls (left)
+      html += '<div class="grip-controls-panel" style="flex:1;min-width:200px;"><div class="grip-controls-title">Columns</div>';
+      for (let c = 0; c < gripCols; c++) {
+        html += `<div class="grip-nudge-row">
+          <span class="grip-nudge-label">Col ${c + 1}</span>
+          <button class="grip-nudge-btn" onclick="nudgeCol(${c}, 0, 1)">↑</button>
+          <button class="grip-nudge-btn" onclick="nudgeCol(${c}, 0, -1)">↓</button>
+          <button class="grip-nudge-btn" onclick="nudgeCol(${c}, 1, 0)">←</button>
+          <button class="grip-nudge-btn" onclick="nudgeCol(${c}, -1, 0)">→</button>
+        </div>`;
+      }
+      html += '</div>';
+
+      // Row controls (right)
+      html += '<div class="grip-controls-panel" style="flex:1;min-width:200px;"><div class="grip-controls-title">Rows</div>';
+      for (let r = 0; r < gripRows; r++) {
+        html += `<div class="grip-nudge-row">
+          <span class="grip-nudge-label">Row ${r + 1}</span>
+          <button class="grip-nudge-btn" onclick="nudgeRow(${r}, 0, 1)">↑</button>
+          <button class="grip-nudge-btn" onclick="nudgeRow(${r}, 0, -1)">↓</button>
+          <button class="grip-nudge-btn" onclick="nudgeRow(${r}, 1, 0)">←</button>
+          <button class="grip-nudge-btn" onclick="nudgeRow(${r}, -1, 0)">→</button>
+        </div>`;
+      }
+      html += '</div>';
+
+      html += '</div>'; // end controls wrapper
+
+      // Segment grid
+      html += `<div class="grip-segment-grid" id="gripSegmentGrid" style="grid-template-columns: repeat(${gripCols}, 1fr);">`;
+      segmentStates.forEach((s, i) => {
+        const url = buildSegmentUrl(parsed, s.x, s.y, s.cellWidth, s.cellHeight, shape, border, s.word, fontOpts);
+        s.currentUrl = url;
+        html += `<div class="grip-segment-card" id="gseg-${i}">
+          <img src="${url}" alt="Segment ${s.index}">
+          <div class="grip-segment-meta">Row ${s.row}, Col ${s.col}</div>
+          <button class="grip-copy-btn" onclick="copySegmentUrl(${i}, this)">Copy URL</button>
+        </div>`;
       });
+      html += '</div>';
+
+      resultsContainer.innerHTML = html;
     } catch (err) {
       resultsContainer.innerHTML = `<p style="color: red;">Error: ${err.message || err}</p>`;
     }
+  }
+
+  function nudgeRow(rowIndex, dx, dy) {
+    const stepX = Math.round(segmentStates[0].cellWidth * 0.02) || 5;
+    const stepY = Math.round(segmentStates[0].cellHeight * 0.02) || 5;
+    segmentStates.forEach(s => {
+      if (s.row === rowIndex + 1) {
+        if (dx) s.x = Math.max(0, s.x + stepX * dx);
+        if (dy) s.y = Math.max(0, s.y + stepY * dy);
+      }
+    });
+    refreshSegmentPreviews();
+  }
+
+  function nudgeCol(colIndex, dx, dy) {
+    const stepX = Math.round(segmentStates[0].cellWidth * 0.02) || 5;
+    const stepY = Math.round(segmentStates[0].cellHeight * 0.02) || 5;
+    segmentStates.forEach(s => {
+      if (s.col === colIndex + 1) {
+        if (dx) s.x = Math.max(0, s.x + stepX * dx);
+        if (dy) s.y = Math.max(0, s.y + stepY * dy);
+      }
+    });
+    refreshSegmentPreviews();
+  }
+
+  function refreshSegmentPreviews() {
+    const parsed = parseCloudinaryUrl(document.getElementById('imgUrl').value.trim());
+    const shape = document.getElementById('shape').value;
+    const border = document.getElementById('border').value;
+    const fontOpts = getFontOpts();
+    const ts = Date.now();
+    segmentStates.forEach((s, i) => {
+      const url = buildSegmentUrl(parsed, s.x, s.y, s.cellWidth, s.cellHeight, shape, border, s.word, fontOpts);
+      s.currentUrl = url;
+      if (lastSegments[i]) lastSegments[i].urlWithText = url;
+      const card = document.getElementById('gseg-' + i);
+      if (card) card.querySelector('img').src = url + '?v=' + ts;
+    });
+  }
+
+  function copySegmentUrl(index, btn) {
+    const url = segmentStates[index].currentUrl;
+    navigator.clipboard.writeText(url).then(() => {
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Copy URL'; btn.classList.remove('copied'); }, 1200);
+    });
   }
 
   function downloadCropLinksTxt() {
@@ -576,24 +763,16 @@
       alert('Generate segment URLs first (click "Generate Segment URLs").');
       return;
     }
-    const lines = lastSegments.map((s) =>
-      `${s.index}. ${s.word ? s.word + ' - ' : ''}${s.urlWithText}`
-    );
-    const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+    const lines = lastSegments.map(s => s.urlWithText);
+    const csv = lines.join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'crop-links.txt';
+    a.download = 'crop-links.csv';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(a.href);
-  }
-
-  function copyToClipboard(inputId) {
-    const input = document.getElementById(inputId);
-    input.select();
-    navigator.clipboard.writeText(input.value);
-    alert('URL copied to clipboard!');
   }
 
   async function renderInPageViewer(withText) {
@@ -603,23 +782,13 @@
       const panel = document.getElementById('interactivePanel');
       const title = document.getElementById('interactiveTitle');
       const container = document.getElementById('interactiveDisplay');
-
       const collageUrl = withText ? collageUrlWithText : collageUrlNoText;
-
       title.innerText = withText ? 'Image Grid & Cloudinary Collage (With Text)' : 'Image Grid & Cloudinary Collage (Without Text)';
       panel.style.display = 'block';
-
-      let gridHtml = `<div class="collage-container">
-        <div class="viewer-image-grid">`;
-
+      let gridHtml = `<div class="collage-container"><div class="viewer-image-grid">`;
       segments.forEach(s => {
-        gridHtml += `
-          <div class="viewer-image-card">
-            <img src="${withText ? s.urlWithText : s.urlWithoutText}" alt="Segment ${s.index}">
-          </div>
-        `;
+        gridHtml += `<div class="viewer-image-card"><img src="${withText ? s.urlWithText : s.urlWithoutText}" alt="Segment ${s.index}"></div>`;
       });
-
       gridHtml += `</div>
         <hr style="border: 0; border-top: 1px solid var(--border-color); width: 100%; margin: 1.5rem 0;">
         <div class="url-container">
@@ -632,7 +801,6 @@
           <img src="${collageUrl}" alt="Cloudinary Combined Collage">
         </div>
       </div>`;
-
       container.innerHTML = gridHtml;
       panel.scrollIntoView({ behavior: 'smooth' });
     } catch (err) {
@@ -645,32 +813,24 @@
     try {
       const { segments } = await buildSegmentData();
       if (segments.length === 0) return alert('No segments found.');
-
       let slideSegments = [...segments];
-
       for (let i = slideSegments.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [slideSegments[i], slideSegments[j]] = [slideSegments[j], slideSegments[i]];
       }
-
       if (singleRandomOnly) {
         const randomIndex = Math.floor(Math.random() * slideSegments.length);
         slideSegments = [slideSegments[randomIndex]];
       }
-
       activeSlides = slideSegments.map(s => withText ? s.urlWithText : s.urlWithoutText);
       currentSlideIndex = 0;
-
       const panel = document.getElementById('interactivePanel');
       const title = document.getElementById('interactiveTitle');
       const container = document.getElementById('interactiveDisplay');
-
-      title.innerText = singleRandomOnly 
-        ? 'Single Random Image Slideshow' 
+      title.innerText = singleRandomOnly
+        ? 'Single Random Image Slideshow'
         : `Random Order Slideshow (${withText ? 'With Text' : 'Without Text'})`;
-
       panel.style.display = 'block';
-
       container.innerHTML = `
         <div class="slideshow-box">
           <img id="embeddedSlideImg" src="${activeSlides[0]}" alt="Slide">
@@ -680,7 +840,6 @@
           </div>
         </div>
       `;
-
       panel.scrollIntoView({ behavior: 'smooth' });
     } catch (err) {
       alert('Error starting slideshow: ' + err.message);
@@ -689,9 +848,7 @@
 
   function updateEmbeddedSlide() {
     const img = document.getElementById('embeddedSlideImg');
-    if (img && activeSlides.length > 0) {
-      img.src = activeSlides[currentSlideIndex];
-    }
+    if (img && activeSlides.length > 0) img.src = activeSlides[currentSlideIndex];
   }
 
   function nextEmbeddedSlide() {
@@ -704,6 +861,12 @@
     if (activeSlides.length === 0) return;
     currentSlideIndex = (currentSlideIndex - 1 + activeSlides.length) % activeSlides.length;
     updateEmbeddedSlide();
+  }
+
+  function copyToClipboard(inputId) {
+    const input = document.getElementById(inputId);
+    input.select();
+    navigator.clipboard.writeText(input.value);
   }
 
   document.addEventListener('keydown', function(e) {
