@@ -11,6 +11,44 @@
       --accent-color: #2563eb;
       --text-color: #1e293b;
       --border-color: #e2e8f0;
+      --surface-hover: #f1f5f9;
+      --input-bg: #f8fafc;
+      --text-sec: #64748b;
+      --dark-panel-bg: #0f172a;
+      --dark-card-inner: #1e293b;
+      --btn-muted: #475569;
+      --btn-muted-hover: #334155;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-color: #0f172a;
+        --card-bg: #1e293b;
+        --accent-color: #3b82f6;
+        --text-color: #f1f5f9;
+        --border-color: #334155;
+        --surface-hover: #334155;
+        --input-bg: #0f172a;
+        --text-sec: #94a3b8;
+        --dark-panel-bg: #1e293b;
+        --dark-card-inner: #334155;
+        --btn-muted: #64748b;
+        --btn-muted-hover: #475569;
+      }
+    }
+
+    .notice-amber {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      color: #92400e;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .notice-amber {
+        background: #451a03;
+        border-color: #92400e;
+        color: #fcd34d;
+      }
     }
 
     body {
@@ -138,7 +176,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background-color: #f1f5f9;
+      background-color: var(--surface-hover);
       border-radius: 6px;
       overflow: hidden;
       flex-shrink: 0;
@@ -160,28 +198,28 @@
     .url-input {
       font-family: monospace;
       font-size: 0.85rem;
-      background-color: #f8fafc;
+      background-color: var(--input-bg);
       width: 100%;
     }
 
     .meta-info {
       font-size: 0.8rem;
-      color: #64748b;
+      color: var(--text-sec);
     }
 
     .btn-copy {
       align-self: flex-start;
       padding: 0.4rem 0.8rem;
       font-size: 0.8rem;
-      background-color: #475569;
+      background-color: var(--btn-muted);
     }
 
     .btn-copy:hover {
-      background-color: #334155;
+      background-color: var(--btn-muted-hover);
     }
 
     .viewer-display-container {
-      background: #0f172a;
+      background: var(--dark-panel-bg);
       border-radius: 8px;
       padding: 2rem;
       display: flex;
@@ -199,7 +237,7 @@
     }
 
     .viewer-image-card {
-      background: #1e293b;
+      background: var(--dark-card-inner);
       padding: 1rem;
       border-radius: 8px;
       display: flex;
@@ -245,7 +283,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      background: #1e293b;
+      background: var(--dark-card-inner);
       padding: 1rem;
       border-radius: 8px;
     }
@@ -307,7 +345,7 @@
     .grip-nudge-label {
       font-size: 0.8rem;
       font-weight: 600;
-      color: #64748b;
+      color: var(--text-sec);
       min-width: 50px;
     }
 
@@ -357,18 +395,18 @@
       aspect-ratio: 1;
       object-fit: cover;
       border-radius: 6px;
-      background: #f1f5f9;
+      background: var(--surface-hover);
     }
 
     .grip-segment-meta {
       font-size: 0.75rem;
       font-weight: 600;
-      color: #64748b;
+      color: var(--text-sec);
       text-align: center;
     }
 
     .grip-copy-btn {
-      background: #475569;
+      background: var(--btn-muted);
       color: white;
       border: none;
       border-radius: 6px;
@@ -381,7 +419,7 @@
     }
 
     .grip-copy-btn:hover {
-      background: #334155;
+      background: var(--btn-muted-hover);
     }
 
     .grip-copy-btn.copied {
@@ -939,7 +977,7 @@
     if (u && !isVideo) {
       var resultsContainer = document.getElementById('results');
       resultsContainer.innerHTML =
-        '<div class="panel" style="background:#fffbeb;border:1px solid #fde68a;color:#92400e;">' +
+        '<div class="panel notice-amber">' +
         '  <strong>Image loaded.</strong> Segment previews are not generated automatically because each preview ' +
         'downloads a Cloudinary transformation that counts toward your monthly quota. ' +
         'Click <strong>Generate Segment URLs</strong> to render the previews.</div>';
