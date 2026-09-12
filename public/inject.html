@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Grip Cropper</title>
+  <title>Grid Cropper</title>
   <style>
     :root {
       --bg-color: #f8fafc;
@@ -392,7 +392,7 @@
 <body>
 
 <div class="container">
-  <h1>Grip Cropper</h1>
+  <h1>Grid Cropper</h1>
 
   <div class="panel" id="mediaPanel" style="display: none;">
     <div class="panel-title">Selected Media</div>
@@ -655,6 +655,8 @@
       segmentStates = segments.map(s => ({
         x: s.x, y: s.y,
         cellWidth: s.cellWidth, cellHeight: s.cellHeight,
+        sourceWidth: gripCols * s.cellWidth,
+        sourceHeight: gripRows * s.cellHeight,
         word: s.word, row: s.row, col: s.col, index: s.index
       }));
 
@@ -689,6 +691,15 @@
       }
       html += '</div>';
 
+      // Crop size controls
+      html += '<div class="grip-controls-panel" style="flex:1;min-width:200px;"><div class="grip-controls-title">Crop Size</div>';
+      html += '<div class="grip-nudge-row"><span class="grip-nudge-label">Size</span>';
+      html += '<button class="grip-nudge-btn" onclick="resizeCrops(-1)">− Smaller</button>';
+      html += '<button class="grip-nudge-btn" onclick="resizeCrops(1)">+ Larger</button>';
+      html += '</div>';
+      html += '<div class="grip-nudge-label" id="cropSizeLabel">&#160;</div>';
+      html += '</div>';
+
       html += '</div>'; // end controls wrapper
 
       // Segment grid
@@ -705,6 +716,7 @@
       html += '</div>';
 
       resultsContainer.innerHTML = html;
+      updateCropSizeLabel();
     } catch (err) {
       resultsContainer.innerHTML = `<p style="color: red;">Error: ${err.message || err}</p>`;
     }
@@ -732,6 +744,31 @@
       }
     });
     refreshSegmentPreviews();
+  }
+
+  function resizeCrops(factor) {
+    if (!segmentStates.length) return;
+    const s0 = segmentStates[0];
+    const stepW = Math.max(1, Math.round(s0.cellWidth * 0.05));
+    const stepH = Math.max(1, Math.round(s0.cellHeight * 0.05));
+    segmentStates.forEach(s => {
+      const centerX = s.x + s.cellWidth / 2;
+      const centerY = s.y + s.cellHeight / 2;
+      const newW = Math.max(1, Math.min(s.sourceWidth, s.cellWidth + stepW * factor));
+      const newH = Math.max(1, Math.min(s.sourceHeight, s.cellHeight + stepH * factor));
+      s.cellWidth = newW;
+      s.cellHeight = newH;
+      s.x = Math.round(Math.max(0, Math.min(s.sourceWidth - newW, centerX - newW / 2)));
+      s.y = Math.round(Math.max(0, Math.min(s.sourceHeight - newH, centerY - newH / 2)));
+    });
+    refreshSegmentPreviews();
+    updateCropSizeLabel();
+  }
+
+  function updateCropSizeLabel() {
+    const label = document.getElementById('cropSizeLabel');
+    const s0 = segmentStates[0];
+    if (label && s0) label.textContent = s0.cellWidth + ' × ' + s0.cellHeight + ' px (source ' + s0.sourceWidth + ' × ' + s0.sourceHeight + ')';
   }
 
   function refreshSegmentPreviews() {
