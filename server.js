@@ -221,6 +221,15 @@ const SHARED_HEAD = `
             width: 13px; height: 13px; fill: none; stroke: currentColor;
             stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
         }
+        .acct-prime { background: #ef4444; }
+        .acct-flow { background: #8b5cf6; }
+        .acct-sync { background: #f97316; }
+        .theme-prime { --accent: #dc2626; --accent-light: #fef2f2; }
+        .theme-sync { --accent: #ea580c; --accent-light: #fff7ed; }
+        @media (prefers-color-scheme: dark) {
+            .theme-prime { --accent: #ef4444; --accent-light: #450a0a; }
+            .theme-sync { --accent: #f97316; --accent-light: #431407; }
+        }
     </style>`;
 
 const COPY_ICON =
@@ -259,21 +268,22 @@ app.get("/", (req, res) => {
   const accounts = [
     {
       id: "C1",
-      name: "Core (dqwm4pdbz)",
+      name: "Prime (dqwm4pdbz)",
       icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>',
-      color: "#6366f1",
+      cls: "acct-prime",
+    },
+    {
+      id: "C3",
+      name: "Sync (dmkhsyfzf)",
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H20a2 2 0 0 1 2 2v.5"/><path d="M12 10v4h4"/><path d="m12 14 1.535-1.605a5 5 0 0 1 8 1.5"/><path d="M22 22v-4h-4"/><path d="m22 18-1.535 1.605a5 5 0 0 1-8-1.5"/></svg>',
+      cls: "acct-sync",
     },
     {
       id: "C2",
       name: "Flow (dp455m4rk)",
       icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>',
-      color: "#8b5cf6",
-    },
-    {
-      id: "C3",
-      name: "Venture (dmkhsyfzf)",
-      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 17a1 1 0 0 0-1 1v1a2 2 0 1 0 2-2z"/><path d="M20.97 3.61a.45.45 0 0 0-.58-.58C10.2 6.6 6.6 10.2 3.03 20.39a.45.45 0 0 0 .58.58C13.8 17.4 17.4 13.8 20.97 3.61"/><path d="m6.707 6.707 10.586 10.586"/><path d="M7 5a2 2 0 1 0-2 2h1a1 1 0 0 0 1-1z"/></svg>',
-      color: "#a78bfa",
+      cls: "acct-flow",
+      disabled: true,
     },
   ];
   res.send(`<!DOCTYPE html>
@@ -299,6 +309,10 @@ app.get("/", (req, res) => {
             transition: all 0.15s ease; box-shadow: var(--shadow);
         }
         .card:hover { box-shadow: var(--shadow-lg); border-color: var(--accent); transform: translateY(-1px); }
+        .card.disabled {
+            opacity: 0.5; cursor: not-allowed; pointer-events: none;
+            filter: grayscale(1); box-shadow: none;
+        }
         .card-icon {
             width: 44px; height: 44px; border-radius: 10px;
             display: flex; align-items: center; justify-content: center;
@@ -321,13 +335,15 @@ app.get("/", (req, res) => {
             ${accounts
               .map((acc) => {
                 const url = "/list-table/" + acc.id;
-                return `<a class="card" href="${url}">
-                    <div class="card-icon" style="background:${acc.color}">${acc.icon}</div>
+                const inner = `
+                    <div class="card-icon ${acc.cls}"${acc.disabled ? ' style="background:#cbd5e1"' : ""}>${acc.icon}</div>
                     <div class="card-body">
                         <div class="card-title">${acc.name}</div>
-                        <div class="card-sub">Open media library</div>
-                    </div>
-                </a>`;
+                        <div class="card-sub">${acc.disabled ? "Deactivated" : "Open media library"}</div>
+                    </div>`;
+                if (acc.disabled)
+                  return `<div class="card disabled" aria-disabled="true">${inner}</div>`;
+                return `<a class="card" href="${url}">${inner}</a>`;
               })
               .join("")}
         </div>
@@ -341,6 +357,8 @@ app.get("/", (req, res) => {
 app.get("/list-table/:account", async (req, res) => {
   try {
     const acct = req.params.account;
+    if (acct === "C2")
+      return res.status(403).send("This account is deactivated.");
     const cld = getCloudinary(acct);
     const folder = req.query.folder || "";
 
@@ -369,19 +387,21 @@ app.get("/list-table/:account", async (req, res) => {
 
     const acctInfo = {
       C1: {
-        title: "Media Library: Core (dqwm4pdbz)",
-        color: "#6366f1",
+        title: "Media Library: Prime (dqwm4pdbz)",
+        cls: "acct-prime",
+        theme: "theme-prime",
         icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>',
       },
       C2: {
         title: "Media Library: Flow (dp455m4rk)",
-        color: "#8b5cf6",
+        cls: "acct-flow",
         icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>',
       },
       C3: {
-        title: "Media Library: Venture (dmkhsyfzf)",
-        color: "#a78bfa",
-        icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 17a1 1 0 0 0-1 1v1a2 2 0 1 0 2-2z"/><path d="M20.97 3.61a.45.45 0 0 0-.58-.58C10.2 6.6 6.6 10.2 3.03 20.39a.45.45 0 0 0 .58.58C13.8 17.4 17.4 13.8 20.97 3.61"/><path d="m6.707 6.707 10.586 10.586"/><path d="M7 5a2 2 0 1 0-2 2h1a1 1 0 0 0 1-1z"/></svg>',
+        title: "Media Library: Sync (dmkhsyfzf)",
+        cls: "acct-sync",
+        theme: "theme-sync",
+        icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H20a2 2 0 0 1 2 2v.5"/><path d="M12 10v4h4"/><path d="m12 14 1.535-1.605a5 5 0 0 1 8 1.5"/><path d="M22 22v-4h-4"/><path d="m22 18-1.535 1.605a5 5 0 0 1-8-1.5"/></svg>',
       },
     };
     const info = acctInfo[acct] || {
@@ -389,6 +409,10 @@ app.get("/list-table/:account", async (req, res) => {
       color: "#6366f1",
       icon: "",
     };
+    const badgeHtml = `<span class="badge${info.cls ? " " + info.cls : ""}"${
+      info.cls ? "" : ` style="background:${info.color}"`
+    }>${info.icon}</span>`;
+    const bodyAttr = info.theme ? ` class="${info.theme}"` : "";
 
     // Breadcrumb from folder path (e.g. foo/bar)
     const segments = folder ? folder.split("/") : [];
@@ -610,14 +634,14 @@ app.get("/list-table/:account", async (req, res) => {
         }
     </style>
 </head>
-<body>
+<body${bodyAttr}>
     <div class="container">
         <div class="header">
             <a class="back-btn" href="/">
                 <svg viewBox="0 0 24 24"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
                 Back
             </a>
-            <span class="badge" style="background:${info.color}">${info.icon}</span>
+            ${badgeHtml}
             <h1>${info.title}</h1>
             <span class="meta-line">${allAssets.length} asset${allAssets.length === 1 ? "" : "s"}</span>
         </div>
