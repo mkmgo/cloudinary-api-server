@@ -444,6 +444,21 @@
         <input type="text" id="imgUrl" value="https://res.cloudinary.com/dp455m4rk/image/upload/v1786050302/A-F_yhrs9s.png" placeholder="https://res.cloudinary.com/your-cloud/image/upload/v12345/image.png">
       </div>
 
+      <div class="form-group full-width">
+        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+          <input type="checkbox" id="showGridOverlay" onchange="toggleGridOverlay()">
+          Show Grid Overlay (preview cuts on source image)
+        </label>
+      </div>
+
+      <div class="form-group full-width" id="gridOverlayContainer" style="display:none;">
+        <div style="position:relative;display:inline-block;max-width:100%;">
+          <img id="gridOverlayImg" src="" alt="Source with grid overlay" style="max-width:100%;height:auto;display:block;">
+          <canvas id="gridOverlayCanvas" style="position:absolute;top:0;left:0;cursor:crosshair;"></canvas>
+        </div>
+        <div id="gridOverlayMeta" class="meta-info" style="margin-top:0.5rem;"></div>
+      </div>
+
       <div class="form-group">
         <label for="rows">Rows</label>
         <input type="number" id="rows" value="2" min="1" max="10">
@@ -568,6 +583,151 @@
     return previewCostConfirmed;
   }
 
+  let gridLines = { v: [], h: [] };
+  let gridDragging = null;
+
+  async function toggleGridOverlay() {
+    const checkbox = document.getElementById('showGridOverlay');
+    const container = document.getElementById('gridOverlayContainer');
+    if (!checkbox.checked) {
+      container.style.display = 'none';
+      return;
+    }
+    const rawUrl = document.getElementById('imgUrl').value.trim();
+    if (!rawUrl) return;
+    container.style.display = 'block';
+    const img = document.getElementById('gridOverlayImg');
+    const canvas = document.getElementById('gridOverlayCanvas');
+    const meta = document.getElementById('gridOverlayMeta');
+    img.src = rawUrl;
+    await new Promise((resolve) => { img.onload = resolve; img.onerror = resolve; });
+    const rows = parseInt(document.getElementById('rows').value) || 2;
+    const cols = parseInt(document.getElementById('cols').value) || 3;
+    const w = img.naturalWidth;
+    const h = img.naturalHeight;
+    const baseCellW = Math.floor(w / cols);
+    const baseCellH = Math.floor(h / rows);
+    gridLines.v = [];
+    gridLines.h = [];
+    for (let c = 1; c < cols; c++) gridLines.v.push(c * baseCellW);
+    for (let r = 1; r < rows; r++) gridLines.h.push(r * baseCellH);
+    canvas.width = w;
+    canvas.height = h;
+    drawGridOverlay();
+    updateGridMeta();
+    setupGridDrag();
+  }
+
+  function drawGridOverlay() {
+    const canvas = document.getElementById('gridOverlayCanvas');
+    const img = document.getElementById('gridOverlayImg');
+    if (!canvas || !img || !img.naturalWidth) return;
+    const w = img.naturalWidth;
+    const h = img.naturalHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, w, h);
+    ctx.strokeStyle = 'rgba(37, 99, 235, 0.85)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([8, 4]);
+    for (const x of gridLines.v) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, h);
+      ctx.stroke();
+    }
+    for (const y of gridLines.h) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(w, y);
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    ctx.strokeStyle = 'rgba(220, 38, 38, 0.9)';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(0, 0, w, h);
+  }
+
+  function updateGridMeta() {
+    const meta = document.getElementById('gridOverlayMeta');
+    const img = document.getElementById('gridOverlayImg');
+    if (!img || !img.naturalWidth) return;
+    const w = img.naturalWidth;
+    const h = img.naturalHeight;
+    const rows = parseInt(document.getElementById('rows').value) || 2;
+    const cols = parseInt(document.getElementById('cols').value) || 3;
+    const vLines = [0, ...gridLines.v, w];
+    const hLines = [0, ...gridLines.h, h];
+    const cellInfo = [];
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const cellW = vLines[c + 1] - vLines[c];
+        const cellH = hLines[r + 1] - hLines[r];
+        cellInfo.push(`R${r + 1}C${c + 1}:${cellW}x${cellH}`);
+      }
+    }
+    meta.textContent = `Image: ${w}x${h} | Grid: ${rows}x${cols} | Drag lines to adjust | Cells: ${cellInfo.join(', ')}`;
+  }
+
+  function setupGridDrag() {
+    const img = document.getElementById('gridOverlayImg');
+    const canvas = document.getElementById('gridOverlayCanvas');
+    if (!img || !canvas) return;
+    const getPos = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+    };
+    const SNAP = 12;
+    const onDown = (e) => {
+      const pos = getPos(e);
+      for (let i = 0; i < gridLines.v.length; i++) {
+        if (Math.abs(pos.x - gridLines.v[i]) < SNAP) {
+          gridDragging = { type: 'v', index: i };
+          e.preventDefault();
+          return;
+        }
+      }
+      for (let i = 0; i < gridLines.h.length; i++) {
+        if (Math.abs(pos.y - gridLines.h[i]) < SNAP) {
+          gridDragging = { type: 'h', index: i };
+          e.preventDefault();
+          return;
+        }
+      }
+    };
+    const onMove = (e) => {
+      if (!gridDragging) return;
+      const pos = getPos(e);
+      const w = canvas.width;
+      const h = canvas.height;
+      if (gridDragging.type === 'v') {
+        const i = gridDragging.index;
+        const min = i === 0 ? 10 : gridLines.v[i - 1] + 10;
+        const max = i === gridLines.v.length - 1 ? w - 10 : gridLines.v[i + 1] - 10;
+        gridLines.v[i] = Math.max(min, Math.min(max, Math.round(pos.x)));
+      } else {
+        const i = gridDragging.index;
+        const min = i === 0 ? 10 : gridLines.h[i - 1] + 10;
+        const max = i === gridLines.h.length - 1 ? h - 10 : gridLines.h[i + 1] - 10;
+        gridLines.h[i] = Math.max(min, Math.min(max, Math.round(pos.y)));
+      }
+      drawGridOverlay();
+      updateGridMeta();
+      e.preventDefault();
+    };
+    const onUp = () => { gridDragging = null; };
+    canvas.onmousedown = onDown;
+    canvas.onmousemove = onMove;
+    canvas.onmouseup = onUp;
+    canvas.onmouseleave = onUp;
+    canvas.ontouchstart = onDown;
+    canvas.ontouchmove = onMove;
+    canvas.ontouchend = onUp;
+  }
+
   async function getImageDimensions(url) {
     return new Promise((resolve, reject) => {
       const img = new Image();
@@ -583,11 +743,19 @@
     const baseUrl = url.substring(0, uploadIndex + 8);
     const rest = url.substring(uploadIndex + 8);
     const parts = rest.split('/');
-    let publicIdWithExt = parts[parts.length - 1];
+    let publicIdWithExt;
     if (parts.length > 1 && parts[0].startsWith('v') && !isNaN(parts[0].substring(1))) {
-      publicIdWithExt = parts.slice(0).join('/');
+      publicIdWithExt = parts.join('/');
     } else if (parts.length > 1) {
-      publicIdWithExt = parts.filter(p => !p.includes('_')).join('/');
+      const transformParts = [];
+      const idParts = [];
+      for (const p of parts) {
+        if (p.includes('_') || p.startsWith('v')) transformParts.push(p);
+        else idParts.push(p);
+      }
+      publicIdWithExt = (transformParts.length ? transformParts.join('/') + '/' : '') + idParts.join('/');
+    } else {
+      publicIdWithExt = parts[parts.length - 1];
     }
     const safePublicId = publicIdWithExt.replace(/^v\d+\//, '').replace(/\.[^/.]+$/, '').replace(/\//g, ':');
     return { baseUrl, publicIdWithExt, safePublicId };
@@ -627,21 +795,30 @@
     const parsed = parseCloudinaryUrl(rawUrl);
     if (!parsed) throw new Error('Invalid Cloudinary URL structure.');
     const dimensions = await getImageDimensions(rawUrl);
-    const cellWidth = Math.floor(dimensions.width / cols);
-    const cellHeight = Math.floor(dimensions.height / rows);
+    const baseCellWidth = Math.floor(dimensions.width / cols);
+    const baseCellHeight = Math.floor(dimensions.height / rows);
+    const remainderX = dimensions.width - (baseCellWidth * cols);
+    const remainderY = dimensions.height - (baseCellHeight * rows);
     const canvasCenterX = Math.floor(dimensions.width / 2);
     const canvasCenterY = Math.floor(dimensions.height / 2);
+    const useCustomGrid = gridLines.v.length === cols - 1 && gridLines.h.length === rows - 1 && (gridLines.v.some(v => Math.abs(v - Math.round(v)) > 0.5) || gridLines.h.some(h => Math.abs(h - Math.round(h)) > 0.5) || gridLines.v.some((v, i) => v !== (i + 1) * baseCellWidth) || gridLines.h.some((h, i) => h !== (i + 1) * baseCellHeight));
 
     const segments = [];
     let index = 0;
+    const vBounds = useCustomGrid ? [0, ...gridLines.v, dimensions.width] : null;
+    const hBounds = useCustomGrid ? [0, ...gridLines.h, dimensions.height] : null;
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
-        const x = c * cellWidth;
-        const y = r * cellHeight;
+        const isLastCol = c === cols - 1;
+        const isLastRow = r === rows - 1;
+        const cellW = useCustomGrid ? vBounds[c + 1] - vBounds[c] : (isLastCol ? baseCellWidth + remainderX : baseCellWidth);
+        const cellH = useCustomGrid ? hBounds[r + 1] - hBounds[r] : (isLastRow ? baseCellHeight + remainderY : baseCellHeight);
+        const x = useCustomGrid ? vBounds[c] : c * baseCellWidth;
+        const y = useCustomGrid ? hBounds[r] : r * baseCellHeight;
         const currentWord = words[index] || '';
-        const urlWithText = buildSegmentUrl(parsed, x, y, cellWidth, cellHeight, shape, border, currentWord, fontOpts);
-        const urlWithoutText = buildSegmentUrl(parsed, x, y, cellWidth, cellHeight, shape, border, '', null);
-        segments.push({ index: index + 1, row: r + 1, col: c + 1, word: currentWord, urlWithText, urlWithoutText, cellWidth, cellHeight, x, y });
+        const urlWithText = buildSegmentUrl(parsed, x, y, cellW, cellH, shape, border, currentWord, fontOpts);
+        const urlWithoutText = buildSegmentUrl(parsed, x, y, cellW, cellH, shape, border, '', null);
+        segments.push({ index: index + 1, row: r + 1, col: c + 1, word: currentWord, urlWithText, urlWithoutText, cellWidth: cellW, cellHeight: cellH, x, y });
         index++;
       }
     }
@@ -690,11 +867,12 @@
       const parsed = parseCloudinaryUrl(document.getElementById('imgUrl').value.trim());
       const fontOpts = getFontOpts();
 
+      const imgDims = await getImageDimensions(document.getElementById('imgUrl').value.trim());
       segmentStates = segments.map(s => ({
         x: s.x, y: s.y,
         cellWidth: s.cellWidth, cellHeight: s.cellHeight,
-        sourceWidth: gripCols * s.cellWidth,
-        sourceHeight: gripRows * s.cellHeight,
+        sourceWidth: imgDims.width,
+        sourceHeight: imgDims.height,
         word: s.word, row: s.row, col: s.col, index: s.index
       }));
 
